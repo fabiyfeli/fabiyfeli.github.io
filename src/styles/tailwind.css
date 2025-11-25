@@ -1,0 +1,342 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors */
+    --color-primary: #D4A574; /* rose gold - warm rose gold for celebration moments */
+    --color-primary-foreground: #FFFFFF; /* white - ensures WCAG AA contrast */
+    
+    /* Secondary Colors */
+    --color-secondary: #F7F3F0; /* cream - soft cream for gentle content backgrounds */
+    --color-secondary-foreground: #2C1810; /* warm dark brown */
+    
+    /* Accent Colors */
+    --color-accent: #8B4513; /* bronze - rich bronze for emphasis and CTAs */
+    --color-accent-foreground: #FFFFFF; /* white */
+    
+    /* Background Colors */
+    --color-background: #FEFCFA; /* warm white - pure warm white for clean reading */
+    --color-foreground: #2C1810; /* warm dark brown - warm dark brown for readability */
+    
+    /* Surface Colors */
+    --color-card: #F5F1EE; /* subtle beige - subtle card backgrounds and sections */
+    --color-card-foreground: #2C1810; /* warm dark brown */
+    --color-popover: #FFFFFF; /* white */
+    --color-popover-foreground: #2C1810; /* warm dark brown */
+    
+    /* Muted Colors */
+    --color-muted: #F5F1EE; /* subtle beige */
+    --color-muted-foreground: #6B5B4F; /* medium brown - medium brown for supporting content */
+    
+    /* Border & Input */
+    --color-border: #E6E6FA; /* lavender - minimal border treatment */
+    --color-input: #F7F3F0; /* cream */
+    --color-ring: #D4A574; /* rose gold */
+    
+    /* State Colors */
+    --color-success: #7D8471; /* sage green - sage green for confirmations and positive states */
+    --color-success-foreground: #FFFFFF; /* white */
+    
+    --color-warning: #E6B17A; /* amber - soft amber for attention without alarm */
+    --color-warning-foreground: #2C1810; /* warm dark brown */
+    
+    --color-error: #C17B5A; /* terracotta - warm terracotta for helpful corrections */
+    --color-error-foreground: #FFFFFF; /* white */
+    
+    --color-destructive: #C17B5A; /* terracotta */
+    --color-destructive-foreground: #FFFFFF; /* white */
+    
+    /* Conversion Colors */
+    --color-cta: #DC143C; /* crimson - creates immediate action urgency */
+    --color-cta-foreground: #FFFFFF; /* white */
+    
+    /* Brand Colors */
+    --color-brand-gold: #DAA520; /* goldenrod - eternal commitment and luxury */
+    --color-brand-pink: #FFC0CB; /* pink - romantic love and gentle femininity */
+    --color-brand-hot-pink: #FF69B4; /* hot pink - drives attention to CTAs */
+    --color-brand-beige: #F5F5DC; /* beige - reliability and comfort */
+    --color-brand-floral: #FFFAF0; /* floral white - elegant foundation */
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem; /* 8px */
+    --spacing-sm: 0.8125rem; /* 13px */
+    --spacing-md: 1.3125rem; /* 21px */
+    --spacing-lg: 2.125rem; /* 34px */
+    --spacing-xl: 3.4375rem; /* 55px */
+    
+    /* Border Radius */
+    --radius-sm: 0.25rem; /* 4px */
+    --radius-md: 0.5rem; /* 8px */
+    --radius-lg: 0.75rem; /* 12px */
+    --radius-xl: 1rem; /* 16px */
+    
+    /* Shadows */
+    --shadow-sm: 0 2px 8px rgba(44, 24, 16, 0.08);
+    --shadow-md: 0 4px 12px rgba(218, 165, 32, 0.15);
+    --shadow-lg: 0 8px 24px rgba(218, 165, 32, 0.2);
+    
+    /* Typography Scale */
+    --font-size-xs: 0.75rem; /* 12px */
+    --font-size-sm: 0.875rem; /* 14px */
+    --font-size-base: 1rem; /* 16px */
+    --font-size-lg: 1.125rem; /* 18px */
+    --font-size-xl: 1.25rem; /* 20px */
+    --font-size-2xl: 1.5rem; /* 24px */
+    --font-size-3xl: 1.875rem; /* 30px */
+    --font-size-4xl: 2.25rem; /* 36px */
+    --font-size-5xl: 3rem; /* 48px */
+    --font-size-6xl: 3.75rem; /* 60px */
+  }
+
+  .dark {
+    --color-background: #1A1410; /* dark warm brown */
+    --color-foreground: #F7F3F0; /* cream */
+    --color-card: #2C1810; /* warm dark brown */
+    --color-card-foreground: #F7F3F0; /* cream */
+    --color-popover: #2C1810; /* warm dark brown */
+    --color-popover-foreground: #F7F3F0; /* cream */
+    --color-muted: #3D2A1F; /* darker brown */
+    --color-muted-foreground: #C4B5A0; /* light brown */
+    --color-border: #3D2A1F; /* darker brown */
+    --color-input: #2C1810; /* warm dark brown */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 700;
+  }
+
+  .font-accent {
+    font-family: 'Dancing Script', cursive;
+  }
+}
+
+@layer components {
+  /* Header Styles */
+  .header {
+    @apply fixed top-0 left-0 right-0 z-50 backdrop-blur-sm border-b border-border;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .header-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .header-content {
+    @apply flex items-center justify-between h-20;
+  }
+
+  .header-logo-container {
+    @apply flex items-center;
+  }
+
+  .header-logo {
+    @apply flex items-center justify-center w-12 h-12 rounded-lg transition-all duration-300;
+  }
+
+  .header-logo:hover {
+    @apply transform scale-105;
+  }
+
+  .header-brand-text {
+    @apply ml-3 text-xl font-bold text-foreground;
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .header-nav {
+    @apply hidden items-center space-x-1;
+  }
+
+  @media (min-width: 1024px) {
+    .header-nav {
+      display: flex;
+    }
+  }
+
+  .header-nav-link {
+    @apply px-4 py-2 text-sm font-medium text-muted-foreground rounded-md transition-all duration-300;
+  }
+
+  .header-nav-link:hover {
+    @apply text-foreground bg-muted;
+  }
+
+  .header-nav-link.active {
+    @apply text-primary;
+  }
+
+  .header-cta-button {
+    @apply hidden items-center px-6 py-2.5 text-sm font-semibold text-white bg-cta rounded-lg transition-all duration-300;
+    box-shadow: var(--shadow-sm);
+  }
+
+  @media (min-width: 1024px) {
+    .header-cta-button {
+      display: inline-flex;
+    }
+  }
+
+  .header-cta-button:hover {
+    @apply transform -translate-y-0.5;
+    box-shadow: var(--shadow-md);
+  }
+
+  .header-mobile-toggle {
+    @apply fixed top-4 right-4 z-50 p-2 text-foreground bg-background rounded-lg border border-border transition-all duration-300;
+    box-shadow: var(--shadow-sm);
+  }
+
+  @media (min-width: 1024px) {
+    .header-mobile-toggle {
+      display: none;
+    }
+  }
+
+  .header-mobile-toggle:hover {
+    @apply bg-muted;
+  }
+
+  /* Mobile Menu Overlay */
+  .mobile-menu-overlay {
+    @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300;
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-menu-overlay {
+      display: none;
+    }
+  }
+
+  .mobile-menu-overlay.hidden {
+    @apply opacity-0 pointer-events-none;
+  }
+
+  /* Mobile Menu */
+  .mobile-menu {
+    @apply fixed top-0 right-0 bottom-0 w-80 bg-background border-l border-border z-40 transform transition-transform duration-300 overflow-y-auto;
+    box-shadow: var(--shadow-lg);
+  }
+
+  @media (min-width: 1024px) {
+    .mobile-menu {
+      display: none;
+    }
+  }
+
+  .mobile-menu.closed {
+    @apply translate-x-full;
+  }
+
+  .mobile-menu-header {
+    @apply flex items-center justify-between p-6 border-b border-border;
+  }
+
+  .mobile-menu-brand {
+    @apply text-xl font-bold text-foreground;
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .mobile-menu-close {
+    @apply p-2 text-muted-foreground hover:text-foreground rounded-lg transition-colors duration-200;
+  }
+
+  .mobile-menu-nav {
+    @apply flex flex-col p-6 space-y-2;
+  }
+
+  .mobile-menu-link {
+    @apply px-4 py-3 text-base font-medium text-muted-foreground rounded-lg transition-all duration-200;
+  }
+
+  .mobile-menu-link:hover {
+    @apply text-foreground bg-muted;
+  }
+
+  .mobile-menu-link.active {
+    @apply text-primary;
+  }
+
+  .mobile-menu-cta {
+    @apply mx-6 mb-6 px-6 py-3 text-center text-sm font-semibold text-white bg-cta rounded-lg transition-all duration-300;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-menu-cta:hover {
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Main Content Offset */
+  .main-content {
+    @apply pt-20;
+  }
+
+  /* Romantic Gradient Overlay */
+  .romantic-gradient {
+    background: linear-gradient(135deg, rgba(218, 165, 32, 0.1) 0%, rgba(255, 192, 203, 0.1) 100%);
+    background-blend-mode: soft-light;
+  }
+
+  /* Heartbeat Animation */
+  @keyframes heartbeat {
+    0%, 100% {
+      transform: scale(1);
+    }
+    50% {
+      transform: scale(1.05);
+    }
+  }
+
+  .heartbeat {
+    animation: heartbeat 2000ms ease-in-out infinite;
+  }
+
+  /* Elegant Hover */
+  .elegant-hover {
+    @apply transition-all duration-300;
+  }
+
+  .elegant-hover:hover {
+    @apply transform -translate-y-2;
+    box-shadow: 0 12px 24px rgba(218, 165, 32, 0.15);
+    filter: brightness(1.05);
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .font-headline {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+
+  .font-body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+
+  .font-cta {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-weight: 600;
+  }
+
+  .font-accent {
+    font-family: 'Dancing Script', cursive;
+  }
+}
