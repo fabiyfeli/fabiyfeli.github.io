@@ -10,10 +10,10 @@ import TravelGuide from './components/TravelGuide';
 import FAQSection from './components/FAQSection';
 
 const WeddingDetails = () => {
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState('es');
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('preferredLanguage') || 'en';
+    const savedLanguage = localStorage.getItem('preferredLanguage') || 'es';
     setLanguage(savedLanguage);
   }, []);
 
@@ -116,107 +116,107 @@ const WeddingDetails = () => {
     en: [
     {
       id: 1,
-      name: "The Fairmont San Francisco",
+      name: "The Singular Santiago",
       stars: 5,
-      description: "Luxury hotel with elegant rooms, rooftop bar, and spa services. Walking distance to reception venue.",
-      distance: "0.1 miles from reception",
-      priceRange: "$250-400",
-      phone: "(415) 555-0789",
-      amenities: ["Free WiFi", "Spa", "Fitness Center", "Room Service"],
+      description: "Luxury boutique hotel in historic building with elegant rooms, rooftop terrace, and spa services. Located in Lastarria neighborhood.",
+      distance: "20 km from venue",
+      priceRange: "$180,000-280,000 CLP",
+      phone: "+56 2 2206 8800",
+      amenities: ["Free WiFi", "Spa", "Fitness Center", "Restaurant"],
       groupRate: true,
-      groupCode: "ETERNALVOWS2025",
-      bookingUrl: "https://www.fairmont.com",
+      groupCode: "FABIYFELI2026",
+      bookingUrl: "https://www.thesingular.com",
       image: "https://images.unsplash.com/photo-1629210435007-663c9f1b80b7",
       imageAlt: "Luxurious five-star hotel exterior with grand entrance, ornate architecture, and elegant facade illuminated at dusk with valet service visible",
-      lat: 37.7919,
-      lng: -122.4102
+      lat: -33.4372,
+      lng: -70.6506
     },
     {
       id: 2,
-      name: "Hotel Nikko San Francisco",
-      stars: 4,
-      description: "Modern hotel with comfortable rooms and excellent amenities. Convenient location near both venues.",
-      distance: "1.5 miles from ceremony",
-      priceRange: "$180-280",
-      phone: "(415) 555-0321",
-      amenities: ["Free WiFi", "Pool", "Restaurant", "Parking"],
+      name: "W Santiago",
+      stars: 5,
+      description: "Modern luxury hotel with contemporary design, rooftop pool, and excellent amenities. Located in Isidora Goyenechea.",
+      distance: "18 km from venue",
+      priceRange: "$150,000-220,000 CLP",
+      phone: "+56 2 2770 0000",
+      amenities: ["Free WiFi", "Rooftop Pool", "Restaurant", "Bar"],
       groupRate: true,
-      groupCode: "VOWS2025",
-      bookingUrl: "https://www.hotelnikkosf.com",
+      groupCode: "FABIYFELI2026",
+      bookingUrl: "https://www.marriott.com/hotels/travel/sclwh-w-santiago",
       image: "https://images.unsplash.com/photo-1639864190739-036c03760d40",
       imageAlt: "Contemporary four-star hotel building with modern glass and steel architecture, sleek entrance with revolving doors, and professional doorman greeting guests",
-      lat: 37.7858,
-      lng: -122.4064
+      lat: -33.4112,
+      lng: -70.5750
     },
     {
       id: 3,
-      name: "Courtyard by Marriott",
+      name: "Holiday Inn Express Santiago",
       stars: 3,
-      description: "Comfortable and affordable option with clean rooms and friendly service. Great value for families.",
-      distance: "2 miles from venues",
-      priceRange: "$120-180",
-      phone: "(415) 555-0654",
-      amenities: ["Free WiFi", "Breakfast", "Fitness Center", "Free Parking"],
+      description: "Comfortable and affordable option with clean rooms and friendly service. Great value for families. Located near airport.",
+      distance: "15 km from venue",
+      priceRange: "$70,000-110,000 CLP",
+      phone: "+56 2 2661 8900",
+      amenities: ["Free WiFi", "Breakfast Included", "Fitness Center", "Free Parking"],
       groupRate: false,
       groupCode: null,
-      bookingUrl: "https://www.marriott.com",
+      bookingUrl: "https://www.ihg.com",
       image: "https://images.unsplash.com/photo-1733709225757-be2d7bbd8714",
       imageAlt: "Welcoming three-star hotel entrance with modern lobby visible through glass doors, comfortable seating area, and bright reception desk with friendly staff",
-      lat: 37.7833,
-      lng: -122.4167
+      lat: -33.3950,
+      lng: -70.7853
     }],
 
     es: [
     {
       id: 1,
-      name: "The Fairmont San Francisco",
+      name: "The Singular Santiago",
       stars: 5,
-      description: "Hotel de lujo con habitaciones elegantes, bar en la azotea y servicios de spa. A poca distancia del lugar de recepción.",
-      distance: "0.1 millas de la recepción",
-      priceRange: "$250-400",
-      phone: "(415) 555-0789",
-      amenities: ["WiFi Gratis", "Spa", "Gimnasio", "Servicio a la Habitación"],
+      description: "Hotel boutique de lujo en edificio histórico con elegantes habitaciones, terraza en azotea y servicios de spa. Ubicado en barrio Lastarria.",
+      distance: "20 km del lugar",
+      priceRange: "$180.000-280.000 CLP",
+      phone: "+56 2 2206 8800",
+      amenities: ["WiFi Gratis", "Spa", "Gimnasio", "Restaurante"],
       groupRate: true,
-      groupCode: "ETERNALVOWS2025",
-      bookingUrl: "https://www.fairmont.com",
+      groupCode: "FABIYFELI2026",
+      bookingUrl: "https://www.thesingular.com",
       image: "https://images.unsplash.com/photo-1629210435007-663c9f1b80b7",
       imageAlt: "Exterior de hotel de lujo de cinco estrellas con entrada grandiosa, arquitectura ornamentada y fachada elegante iluminada al anochecer con servicio de valet visible",
-      lat: 37.7919,
-      lng: -122.4102
+      lat: -33.4372,
+      lng: -70.6506
     },
     {
       id: 2,
-      name: "Hotel Nikko San Francisco",
-      stars: 4,
-      description: "Hotel moderno con habitaciones cómodas y excelentes comodidades. Ubicación conveniente cerca de ambos lugares.",
-      distance: "1.5 millas de la ceremonia",
-      priceRange: "$180-280",
-      phone: "(415) 555-0321",
-      amenities: ["WiFi Gratis", "Piscina", "Restaurante", "Estacionamiento"],
+      name: "W Santiago",
+      stars: 5,
+      description: "Hotel de lujo moderno con diseño contemporáneo, piscina en azotea y excelentes comodidades. Ubicado en Isidora Goyenechea.",
+      distance: "18 km del lugar",
+      priceRange: "$150.000-220.000 CLP",
+      phone: "+56 2 2770 0000",
+      amenities: ["WiFi Gratis", "Piscina en Azotea", "Restaurante", "Bar"],
       groupRate: true,
-      groupCode: "VOWS2025",
-      bookingUrl: "https://www.hotelnikkosf.com",
+      groupCode: "FABIYFELI2026",
+      bookingUrl: "https://www.marriott.com/hotels/travel/sclwh-w-santiago",
       image: "https://images.unsplash.com/photo-1639864190739-036c03760d40",
       imageAlt: "Edificio de hotel contemporáneo de cuatro estrellas con arquitectura moderna de vidrio y acero, entrada elegante con puertas giratorias y portero profesional saludando a los huéspedes",
-      lat: 37.7858,
-      lng: -122.4064
+      lat: -33.4112,
+      lng: -70.5750
     },
     {
       id: 3,
-      name: "Courtyard by Marriott",
+      name: "Holiday Inn Express Santiago",
       stars: 3,
-      description: "Opción cómoda y asequible con habitaciones limpias y servicio amable. Gran valor para familias.",
-      distance: "2 millas de los lugares",
-      priceRange: "$120-180",
-      phone: "(415) 555-0654",
-      amenities: ["WiFi Gratis", "Desayuno", "Gimnasio", "Estacionamiento Gratis"],
+      description: "Opción cómoda y asequible con habitaciones limpias y servicio amable. Gran valor para familias. Ubicado cerca del aeropuerto.",
+      distance: "15 km del lugar",
+      priceRange: "$70.000-110.000 CLP",
+      phone: "+56 2 2661 8900",
+      amenities: ["WiFi Gratis", "Desayuno Incluido", "Gimnasio", "Estacionamiento Gratis"],
       groupRate: false,
       groupCode: null,
-      bookingUrl: "https://www.marriott.com",
+      bookingUrl: "https://www.ihg.com",
       image: "https://images.unsplash.com/photo-1733709225757-be2d7bbd8714",
       imageAlt: "Entrada acogedora de hotel de tres estrellas con vestíbulo moderno visible a través de puertas de vidrio, área de estar cómoda y mostrador de recepción brillante con personal amable",
-      lat: 37.7833,
-      lng: -122.4167
+      lat: -33.3950,
+      lng: -70.7853
     }]
 
   };

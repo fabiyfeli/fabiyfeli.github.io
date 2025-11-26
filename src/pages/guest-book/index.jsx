@@ -9,7 +9,7 @@ import StatsSection from './components/StatsSection';
 import LanguageToggle from './components/LanguageToggle';
 
 const GuestBook = () => {
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [currentLanguage, setCurrentLanguage] = useState('es');
   const [messages, setMessages] = useState([]);
   const [filteredMessages, setFilteredMessages] = useState([]);
   const [filters, setFilters] = useState({

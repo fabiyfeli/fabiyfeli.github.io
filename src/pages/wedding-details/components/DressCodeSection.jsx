@@ -5,16 +5,16 @@ const DressCodeSection = ({ language }) => {
   const dressCodeInfo = {
     en: {
       title: "Dress Code",
-      subtitle: "Formal Attire",
-      description: "We kindly request formal attire for our celebration. Think elegant evening wear that makes you feel confident and beautiful.",
+      subtitle: "Casual / Semi-Casual",
+      description: "We want you to feel comfortable! Since our celebration will be during summer, please choose an outfit that makes you feel relaxed and allows you to enjoy the day.",
       guidelines: [
       {
         category: "For Her",
         icon: "Sparkles",
         suggestions: [
-        "Floor-length gowns or elegant cocktail dresses",
-        "Dressy separates or formal jumpsuits",
-        "Heels or dressy flats recommended",
+        "Sundresses, midi dresses, or casual elegant dresses",
+        "Light fabrics like cotton or linen recommended",
+        "Comfortable sandals, flats, or low heels",
         "Please avoid white, ivory, or cream colors"]
 
       },
@@ -22,10 +22,10 @@ const DressCodeSection = ({ language }) => {
         category: "For Him",
         icon: "Award",
         suggestions: [
-        "Dark suits or tuxedos preferred",
-        "Dress shirt with tie or bow tie",
-        "Dress shoes (no sneakers please)",
-        "Optional: Pocket square or cufflinks"]
+        "Light-colored pants or chinos with dress shirt",
+        "Blazer optional (can be removed if warm)",
+        "Loafers, dress shoes, or clean casual shoes",
+        "Tie optional - comfort is key"]
 
       }],
 
@@ -39,22 +39,22 @@ const DressCodeSection = ({ language }) => {
         { name: "Burgundy", hex: "#800020", description: "Rich and romantic" }]
 
       },
-      weatherNote: "June weather averages 75°F (24°C). Consider bringing a light wrap or jacket for evening.",
+      weatherNote: "January is summer in Chile with temperatures around 86°F (30°C) during the day. Light, breathable fabrics are highly recommended. The evening may cool down slightly.",
       image: "https://images.unsplash.com/photo-1628019095030-f6729546a026",
       imageAlt: "Elegant formal wedding attire display featuring sophisticated evening gowns and tailored suits in romantic color palette with rose gold and navy accents"
     },
     es: {
       title: "Código de Vestimenta",
-      subtitle: "Vestimenta Formal",
-      description: "Solicitamos amablemente vestimenta formal para nuestra celebración. Piense en ropa de noche elegante que lo haga sentir seguro y hermoso.",
+      subtitle: "Casual / Semi-Casual",
+      description: "¡Queremos que te sientas cómodo! Como nuestra celebración será en verano, elige un atuendo que te haga sentir relajado y te permita disfrutar del día.",
       guidelines: [
       {
         category: "Para Ella",
         icon: "Sparkles",
         suggestions: [
-        "Vestidos largos o vestidos de cóctel elegantes",
-        "Conjuntos elegantes o monos formales",
-        "Se recomiendan tacones o zapatos elegantes",
+        "Vestidos de verano, vestidos midi o vestidos elegantes casuales",
+        "Se recomiendan telas ligeras como algodón o lino",
+        "Sandalias cómodas, zapatos planos o tacones bajos",
         "Por favor evite colores blancos, marfil o crema"]
 
       },
@@ -62,10 +62,10 @@ const DressCodeSection = ({ language }) => {
         category: "Para Él",
         icon: "Award",
         suggestions: [
-        "Trajes oscuros o esmoquin preferidos",
-        "Camisa de vestir con corbata o pajarita",
-        "Zapatos de vestir (no zapatillas por favor)",
-        "Opcional: Pañuelo de bolsillo o gemelos"]
+        "Pantalones claros o chinos con camisa de vestir",
+        "Blazer opcional (puede quitarse si hace calor)",
+        "Mocasines, zapatos de vestir o zapatos casuales limpios",
+        "Corbata opcional - la comodidad es clave"]
 
       }],
 
@@ -79,7 +79,7 @@ const DressCodeSection = ({ language }) => {
         { name: "Borgoña", hex: "#800020", description: "Rico y romántico" }]
 
       },
-      weatherNote: "El clima de junio promedia 75°F (24°C). Considere traer un chal ligero o chaqueta para la noche.",
+      weatherNote: "Enero es verano en Chile con temperaturas alrededor de 30°C (86°F) durante el día. Se recomiendan altamente telas ligeras y transpirables. La noche puede refrescar un poco.",
       image: "https://img.rocket.new/generatedImages/rocket_gen_img_142daa070-1764102468132.png",
       imageAlt: "Exhibición elegante de vestimenta formal de boda con sofisticados vestidos de noche y trajes a medida en paleta de colores románticos con acentos de oro rosa y azul marino"
     }

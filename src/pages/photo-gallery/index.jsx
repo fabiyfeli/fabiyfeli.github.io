@@ -10,7 +10,7 @@ import ShareSection from './components/ShareSection';
 import Icon from '../../components/AppIcon';
 
 const PhotoGallery = () => {
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [currentLanguage, setCurrentLanguage] = useState('es');
   const [activeFilter, setActiveFilter] = useState('all');
   const [activeYear, setActiveYear] = useState(null);
   const [selectedPhoto, setSelectedPhoto] = useState(null);

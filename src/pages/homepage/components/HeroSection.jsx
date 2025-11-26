@@ -52,7 +52,7 @@ const HeroSection = ({ language }) => {
     },
     es: {
       greeting: "Juntos Para Siempre",
-      names: "Fabiana y Felipe",
+      names: "Fabiana & Felipe",
       date: "31 de Enero, 2026 a las 7:00 PM",
       venue: "Casona San Ignacio, Santiago, Chile",
       countdown: "Contando los Días Hasta Nuestro Día Especial",

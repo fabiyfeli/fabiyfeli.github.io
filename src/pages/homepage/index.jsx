@@ -9,7 +9,7 @@ import Footer from './components/Footer';
 import LanguageToggle from './components/LanguageToggle';
 
 const Homepage = () => {
-  const [language, setLanguage] = useState('en');
+  const [language, setLanguage] = useState('es');
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('preferredLanguage');

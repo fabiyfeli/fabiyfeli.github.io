@@ -18,67 +18,67 @@ const TravelGuide = ({ language }) => {
         {
           type: "By Air",
           icon: "Plane",
-          details: "San Francisco International Airport (SFO) - 25 miles from venue\nOakland International Airport (OAK) - 30 miles from venue",
-          tips: "Book flights early for best rates. Shuttle service available from both airports."
+          details: "Arturo Merino Benítez International Airport (SCL) - 30 km from venue\nServed by major airlines from around the world",
+          tips: "Book flights early for best rates. Transfer services and taxis available from the airport."
         },
         {
           type: "By Car",
           icon: "Car",
-          details: "Free parking available at all venues\nValet service at reception venue",
-          tips: "GPS coordinates: 37.7749° N, 122.4194° W\nTraffic can be heavy 4-6 PM on weekdays."
+          details: "Free parking available at the venue\nEasy access via Route 5 North",
+          tips: "GPS coordinates: -33.3413° S, -70.6944° W\nTraffic can be heavy during rush hours (7-9 AM, 6-8 PM)."
         },
         {
-          type: "Rideshare",
+          type: "Rideshare & Taxi",
           icon: "Navigation",
-          details: "Uber and Lyft readily available\nEstimated cost from SFO: $45-65",
-          tips: "Consider sharing rides with other guests to reduce costs and environmental impact."
+          details: "Uber, Cabify, and DiDi readily available\nEstimated cost from SCL Airport: $25,000-35,000 CLP",
+          tips: "Consider sharing rides with other guests. Radio taxis are also reliable and can be booked in advance."
         }]
 
       },
       attractions: [
       {
-        name: "Golden Gate Bridge",
-        description: "Iconic suspension bridge with stunning views",
-        distance: "8 miles",
-        image: "https://images.unsplash.com/photo-1644907102889-f8f97c3056f5",
-        imageAlt: "Majestic Golden Gate Bridge spanning San Francisco Bay with orange-red towers against blue sky and rolling fog"
+        name: "Cerro San Cristóbal",
+        description: "Iconic hill with panoramic city views and Virgin Mary statue",
+        distance: "20 km",
+        image: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62",
+        imageAlt: "Cerro San Cristóbal overlooking Santiago with white Virgin Mary statue and Andes mountains in background"
       },
       {
-        name: "Fisherman\'s Wharf",
-        description: "Waterfront neighborhood with shops and seafood",
-        distance: "5 miles",
-        image: "https://images.unsplash.com/photo-1730655900630-b046f843ab2e",
-        imageAlt: "Bustling Fisherman's Wharf waterfront with historic pier buildings, seafood restaurants, and tourists enjoying bay views"
+        name: "Plaza de Armas",
+        description: "Historic main square with colonial architecture and museums",
+        distance: "22 km",
+        image: "https://images.unsplash.com/photo-1489171084589-9b5031ebcf9b",
+        imageAlt: "Plaza de Armas central square with historic cathedral, palm trees, and people enjoying the plaza"
       },
       {
-        name: "Alcatraz Island",
-        description: "Historic former federal prison with tours",
-        distance: "6 miles",
-        image: "https://images.unsplash.com/photo-1679560872210-efc55a8fd6d7",
-        imageAlt: "Historic Alcatraz Island prison complex on rocky outcrop in San Francisco Bay with lighthouse and cell blocks visible"
+        name: "Barrio Lastarria",
+        description: "Bohemian neighborhood with art, restaurants, and nightlife",
+        distance: "18 km",
+        image: "https://images.unsplash.com/photo-1518638150340-f706e86654de",
+        imageAlt: "Colorful Barrio Lastarria streets with murals, cafes, and vibrant cultural atmosphere"
       }],
 
       dining: [
       {
-        name: "The Garden Bistro",
-        cuisine: "Farm-to-Table",
+        name: "Borago",
+        cuisine: "Contemporary Chilean",
         priceRange: "$$$",
-        description: "Fresh, seasonal ingredients in elegant setting",
-        speciality: "Weekend brunch highly recommended"
+        description: "Award-winning restaurant featuring native Chilean ingredients",
+        speciality: "Tasting menu with seasonal local products"
       },
       {
-        name: "Bella Vista Italian",
-        cuisine: "Italian",
+        name: "Peumayen Ancestral Food",
+        cuisine: "Indigenous Chilean",
         priceRange: "$$",
-        description: "Authentic Italian cuisine with bay views",
-        speciality: "Homemade pasta and wood-fired pizza"
+        description: "Authentic Chilean cuisine from various indigenous cultures",
+        speciality: "Traditional dishes like curanto and merkén"
       },
       {
-        name: "Sunset Seafood",
+        name: "Ocean Pacific's",
         cuisine: "Seafood",
         priceRange: "$$$",
-        description: "Fresh catch daily with waterfront dining",
-        speciality: "Dungeness crab and clam chowder"
+        description: "Fresh seafood from the Chilean coast",
+        speciality: "Ceviche, machas a la parmesana, and congrio"
       }]
 
     },
@@ -94,67 +94,66 @@ const TravelGuide = ({ language }) => {
         {
           type: "Por Avión",
           icon: "Plane",
-          details: "Aeropuerto Internacional de San Francisco (SFO) - 25 millas del lugar\nAeropuerto Internacional de Oakland (OAK) - 30 millas del lugar",
-          tips: "Reserve vuelos temprano para mejores tarifas. Servicio de transporte disponible desde ambos aeropuertos."
+          details: "Aeropuerto Internacional Arturo Merino Benítez (SCL) - 30 km del lugar\nConectado con principales aerolíneas del mundo",
+          tips: "Reserve vuelos temprano para mejores tarifas. Servicios de transfer y taxis disponibles desde el aeropuerto."
         },
         {
           type: "En Auto",
           icon: "Car",
-          details: "Estacionamiento gratuito disponible en todos los lugares\nServicio de valet en el lugar de recepción",
-          tips: "Coordenadas GPS: 37.7749° N, 122.4194° W\nEl tráfico puede ser pesado de 4-6 PM en días laborables."
+          details: "Estacionamiento gratuito disponible en el lugar\nFácil acceso por Ruta 5 Norte",
+          tips: "Coordenadas GPS: -33.3413° S, -70.6944° W\nEl tráfico puede ser intenso en horas punta (7-9 AM, 6-8 PM)."
         },
         {
-          type: "Transporte Compartido",
+          type: "Transporte Compartido y Taxi",
           icon: "Navigation",
-          details: "Uber y Lyft fácilmente disponibles\nCosto estimado desde SFO: $45-65",
-          tips: "Considere compartir viajes con otros invitados para reducir costos e impacto ambiental."
+          details: "Uber, Cabify y DiDi fácilmente disponibles\nCosto estimado desde Aeropuerto SCL: $25,000-35,000 CLP",
+          tips: "Considere compartir viajes con otros invitados. Los radiotaxis también son confiables y pueden reservarse con anticipación."
         }]
 
       },
       attractions: [
       {
-        name: "Puente Golden Gate",
-        description: "Icónico puente colgante con vistas impresionantes",
-        distance: "8 millas",
-        image: "https://images.unsplash.com/photo-1723398702245-3857dfb0d8a4",
-        imageAlt: "Majestuoso Puente Golden Gate atravesando la Bahía de San Francisco con torres rojo-naranja contra cielo azul y niebla ondulante"
+        name: "Cerro San Cristóbal",
+        description: "Icónico cerro con vistas panorámicas y estatua de la Virgen María",
+        distance: "20 km",
+        image: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62",
+        imageAlt: "Cerro San Cristóbal con vista de Santiago, estatua blanca de la Virgen María y montañas de los Andes al fondo"
       },
       {
-        name: "Muelle del Pescador",
-        description: "Barrio frente al mar con tiendas y mariscos",
-        distance: "5 millas",
-        image: "https://images.unsplash.com/photo-1638771316317-f98044bc2292",
-        imageAlt: "Bullicioso muelle del pescador con edificios históricos del muelle, restaurantes de mariscos y turistas disfrutando de vistas de la bahía"
+        name: "Plaza de Armas",
+        description: "Plaza principal histórica con arquitectura colonial y museos",
+        distance: "22 km",
+        image: "https://images.unsplash.com/photo-1489171084589-9b5031ebcf9b",
+        imageAlt: "Plaza de Armas central con catedral histórica, palmeras y personas disfrutando de la plaza"
       },
       {
-        name: "Isla de Alcatraz",
-        description: "Histórica ex prisión federal con tours",
-        distance: "6 millas",
-        image: "https://images.unsplash.com/photo-1679560872210-efc55a8fd6d7",
-        imageAlt: "Complejo histórico de la prisión de la Isla de Alcatraz en afloramiento rocoso en la Bahía de San Francisco con faro y bloques de celdas visibles"
+        name: "Barrio Lastarria",
+        description: "Barrio bohemio con arte, restaurantes y vida nocturna",
+        distance: "18 km",
+        imageAlt: "Calles coloridas de Barrio Lastarria con murales, cafés y vibrante atmósfera cultural"
       }],
 
       dining: [
       {
-        name: "The Garden Bistro",
-        cuisine: "De la Granja a la Mesa",
+        name: "Borago",
+        cuisine: "Chilena Contemporánea",
         priceRange: "$$$",
-        description: "Ingredientes frescos de temporada en ambiente elegante",
-        speciality: "Brunch de fin de semana muy recomendado"
+        description: "Restaurante premiado con ingredientes nativos chilenos",
+        speciality: "Menú degustación con productos locales de temporada"
       },
       {
-        name: "Bella Vista Italian",
-        cuisine: "Italiano",
+        name: "Peumayen Ancestral Food",
+        cuisine: "Chilena Indígena",
         priceRange: "$$",
-        description: "Cocina italiana auténtica con vistas a la bahía",
-        speciality: "Pasta casera y pizza al horno de leña"
+        description: "Cocina chilena auténtica de diversas culturas indígenas",
+        speciality: "Platos tradicionales como curanto y merkén"
       },
       {
-        name: "Sunset Seafood",
+        name: "Ocean Pacific's",
         cuisine: "Mariscos",
         priceRange: "$$$",
-        description: "Captura fresca diaria con comedor frente al mar",
-        speciality: "Cangrejo Dungeness y sopa de almejas"
+        description: "Mariscos frescos de la costa chilena",
+        speciality: "Ceviche, machas a la parmesana y congrio"
       }]
 
     }

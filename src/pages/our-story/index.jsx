@@ -10,7 +10,7 @@ import FutureVision from './components/FutureVision';
 import Icon from '../../components/AppIcon';
 
 const OurStory = () => {
-  const [currentLanguage, setCurrentLanguage] = useState('en');
+  const [currentLanguage, setCurrentLanguage] = useState('es');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
