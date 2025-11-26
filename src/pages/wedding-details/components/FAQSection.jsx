@@ -11,11 +11,23 @@ const FAQSection = ({ language }) => {
       faqs: [
         {
           question: "What time should I arrive?",
-          answer: "Please arrive at least 15 minutes before the ceremony begins at 3:00 PM. This allows time for parking, seating, and settling in before the ceremony starts."
+          answer: "Please arrive at least 30 minutes before the ceremony begins at 7:00 PM. This allows time for parking, seating, and settling in before the ceremony starts. The venue is Casona San Ignacio in Quilicura, Santiago, Chile."
+        },
+        {
+          question: "When and where is the wedding?",
+          answer: "The wedding will take place on Saturday, January 31, 2026 at 7:00 PM at Casona San Ignacio, located at Caupolicán 8611, Quilicura, Región Metropolitana, Chile."
         },
         {
           question: "Is there parking available?",
-          answer: "Yes, complimentary parking is available at all venues. Valet service will be provided at the reception venue for your convenience."
+          answer: "Yes, complimentary parking is available at the venue. The venue is easily accessible via Route 5 North."
+        },
+        {
+          question: "What is the dress code?",
+          answer: "Casual or semi-casual attire. Since our celebration will be during summer (January in Chile), please choose comfortable clothing with light, breathable fabrics. Ladies can wear sundresses or casual elegant dresses, gentlemen can wear light pants with dress shirts. Please avoid white, ivory, or cream colors."
+        },
+        {
+          question: "What will the weather be like?",
+          answer: "January is summer in Chile with temperatures around 30°C (86°F) during the day. Light, breathable fabrics are highly recommended. The evening may cool down slightly."
         },
         {
           question: "Can I bring a plus-one?",
@@ -26,28 +38,24 @@ const FAQSection = ({ language }) => {
           answer: "While we love your little ones, we have decided to make our wedding an adults-only celebration. We hope this allows parents to relax and enjoy the evening."
         },
         {
-          question: "What is the dress code?",
-          answer: "We request formal attire. Think elegant evening wear - floor-length gowns or cocktail dresses for ladies, and suits or tuxedos for gentlemen. Please avoid white, ivory, or cream colors."
-        },
-        {
           question: "Will there be food and drinks?",
-          answer: "Yes! A full dinner will be served during the reception, along with an open bar featuring wine, beer, and signature cocktails. Please let us know of any dietary restrictions when you RSVP."
-        },
-        {
-          question: "Can I take photos during the ceremony?",
-          answer: "We kindly request an unplugged ceremony. Our professional photographer will capture all the special moments. Please enjoy being present and save your photos for the reception!"
+          answer: "Yes! A full dinner will be served during the reception, along with drinks. Please let us know of any dietary restrictions when you RSVP."
         },
         {
           question: "What if I have dietary restrictions?",
           answer: "Please indicate any dietary restrictions or allergies when you RSVP. We will work with our caterer to accommodate vegetarian, vegan, gluten-free, and other dietary needs."
         },
         {
-          question: "Is the venue wheelchair accessible?",
-          answer: "Yes, both the ceremony and reception venues are fully wheelchair accessible with ramps and accessible restrooms available."
+          question: "How do I get to the venue?",
+          answer: "The venue is accessible by car via Route 5 North. From Santiago airport (SCL), it's approximately 30 km. Uber, Cabify, and DiDi are readily available. Estimated cost from the airport: $25,000-35,000 CLP."
         },
         {
-          question: "What is your gift registry?",
-          answer: "Your presence is the greatest gift! However, if you wish to honor us with a gift, we have registries at several retailers. Links can be found on our Registry page."
+          question: "Is the venue wheelchair accessible?",
+          answer: "Yes, the venue is fully wheelchair accessible with ramps and accessible restrooms available."
+        },
+        {
+          question: "Where can I stay?",
+          answer: "We recommend hotels like The Singular Santiago, W Santiago, or Holiday Inn Express Santiago. Check our Accommodations section for more details and group codes."
         }
       ]
     },
@@ -57,11 +65,23 @@ const FAQSection = ({ language }) => {
       faqs: [
         {
           question: "¿A qué hora debo llegar?",
-          answer: "Por favor llegue al menos 15 minutos antes de que comience la ceremonia a las 3:00 PM. Esto permite tiempo para estacionar, sentarse y acomodarse antes de que comience la ceremonia."
+          answer: "Por favor llegue al menos 30 minutos antes de que comience la ceremonia a las 7:00 PM. Esto permite tiempo para estacionar, sentarse y acomodarse antes de que comience la ceremonia. El lugar es Casona San Ignacio en Quilicura, Santiago, Chile."
+        },
+        {
+          question: "¿Cuándo y dónde es la boda?",
+          answer: "La boda se llevará a cabo el sábado 31 de enero de 2026 a las 7:00 PM en Casona San Ignacio, ubicada en Caupolicán 8611, Quilicura, Región Metropolitana, Chile."
         },
         {
           question: "¿Hay estacionamiento disponible?",
-          answer: "Sí, hay estacionamiento gratuito disponible en todos los lugares. Se proporcionará servicio de valet en el lugar de recepción para su comodidad."
+          answer: "Sí, hay estacionamiento gratuito disponible en el lugar. El lugar es de fácil acceso por la Ruta 5 Norte."
+        },
+        {
+          question: "¿Cuál es el código de vestimenta?",
+          answer: "Vestimenta casual o semi-casual. Como nuestra celebración será en verano (enero en Chile), elige ropa cómoda con telas ligeras y transpirables. Las damas pueden usar vestidos de verano o vestidos elegantes casuales, los caballeros pueden usar pantalones claros con camisas de vestir. Por favor evite colores blancos, marfil o crema."
+        },
+        {
+          question: "¿Cómo estará el clima?",
+          answer: "Enero es verano en Chile con temperaturas alrededor de 30°C (86°F) durante el día. Se recomiendan altamente telas ligeras y transpirables. La noche puede refrescar un poco."
         },
         {
           question: "¿Puedo traer un acompañante?",
@@ -72,28 +92,24 @@ const FAQSection = ({ language }) => {
           answer: "Si bien amamos a sus pequeños, hemos decidido hacer de nuestra boda una celebración solo para adultos. Esperamos que esto permita a los padres relajarse y disfrutar de la noche."
         },
         {
-          question: "¿Cuál es el código de vestimenta?",
-          answer: "Solicitamos vestimenta formal. Piense en ropa de noche elegante: vestidos largos o de cóctel para damas, y trajes o esmoquin para caballeros. Por favor evite colores blancos, marfil o crema."
-        },
-        {
           question: "¿Habrá comida y bebidas?",
-          answer: "¡Sí! Se servirá una cena completa durante la recepción, junto con una barra libre con vino, cerveza y cócteles exclusivos. Por favor infórmenos de cualquier restricción dietética cuando confirme su asistencia."
-        },
-        {
-          question: "¿Puedo tomar fotos durante la ceremonia?",
-          answer: "Solicitamos amablemente una ceremonia sin dispositivos. Nuestro fotógrafo profesional capturará todos los momentos especiales. ¡Por favor disfrute estar presente y guarde sus fotos para la recepción!"
+          answer: "¡Sí! Se servirá una cena completa durante la recepción, junto con bebidas. Por favor infórmenos de cualquier restricción dietética cuando confirme su asistencia."
         },
         {
           question: "¿Qué pasa si tengo restricciones dietéticas?",
           answer: "Por favor indique cualquier restricción dietética o alergia cuando confirme su asistencia. Trabajaremos con nuestro servicio de catering para acomodar necesidades vegetarianas, veganas, sin gluten y otras necesidades dietéticas."
         },
         {
-          question: "¿El lugar es accesible para sillas de ruedas?",
-          answer: "Sí, tanto el lugar de la ceremonia como el de la recepción son completamente accesibles para sillas de ruedas con rampas y baños accesibles disponibles."
+          question: "¿Cómo llego al lugar?",
+          answer: "El lugar es accesible en auto por la Ruta 5 Norte. Desde el aeropuerto de Santiago (SCL), son aproximadamente 30 km. Uber, Cabify y DiDi están fácilmente disponibles. Costo estimado desde el aeropuerto: $25.000-35.000 CLP."
         },
         {
-          question: "¿Cuál es su registro de regalos?",
-          answer: "¡Su presencia es el mayor regalo! Sin embargo, si desea honrarnos con un regalo, tenemos registros en varios minoristas. Los enlaces se pueden encontrar en nuestra página de Registro."
+          question: "¿El lugar es accesible para sillas de ruedas?",
+          answer: "Sí, el lugar es completamente accesible para sillas de ruedas con rampas y baños accesibles disponibles."
+        },
+        {
+          question: "¿Dónde puedo alojarme?",
+          answer: "Recomendamos hoteles como The Singular Santiago, W Santiago o Holiday Inn Express Santiago. Consulta nuestra sección de Alojamiento para más detalles y códigos de grupo."
         }
       ]
     }

@@ -4,11 +4,30 @@ import Icon from './AppIcon';
 
 const Header = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [language, setLanguage] = useState('es');
   const location = useLocation();
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location?.pathname]);
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage') || 'es';
+    setLanguage(savedLanguage);
+
+    const handleStorageChange = () => {
+      const newLanguage = localStorage.getItem('preferredLanguage') || 'es';
+      setLanguage(newLanguage);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    const interval = setInterval(handleStorageChange, 500);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, []);
 
   useEffect(() => {
     if (isMobileMenuOpen) {
@@ -21,12 +40,33 @@ const Header = () => {
     };
   }, [isMobileMenuOpen]);
 
+  const navigationContent = {
+    en: {
+      home: 'Home',
+      ourStory: 'Our Story',
+      weddingDetails: 'Wedding Details',
+      gallery: 'Gallery',
+      guestBook: 'Guest Book',
+      rsvp: 'RSVP Now'
+    },
+    es: {
+      home: 'Inicio',
+      ourStory: 'Nuestra Historia',
+      weddingDetails: 'Detalles de la Boda',
+      gallery: 'Galería',
+      guestBook: 'Libro de Invitados',
+      rsvp: 'Confirmar Asistencia'
+    }
+  };
+
+  const content = navigationContent[language];
+
   const navigationItems = [
-    { path: '/homepage', label: 'Home' },
-    { path: '/our-story', label: 'Our Story' },
-    { path: '/wedding-details', label: 'Wedding Details' },
-    { path: '/photo-gallery', label: 'Gallery' },
-    { path: '/guest-book', label: 'Guest Book' },
+    { path: '/homepage', label: content.home },
+    { path: '/our-story', label: content.ourStory },
+    { path: '/wedding-details', label: content.weddingDetails },
+    { path: '/photo-gallery', label: content.gallery },
+    { path: '/guest-book', label: content.guestBook },
   ];
 
   const isActivePath = (path) => {
@@ -46,7 +86,7 @@ const Header = () => {
               <div className="header-logo">
                 <Icon name="Heart" size={24} color="var(--color-primary)" />
               </div>
-              <span className="header-brand-text">Eternal Vows</span>
+              <span className="header-brand-text">Fabi & Feli</span>
             </Link>
 
             <nav className="header-nav">
@@ -63,7 +103,7 @@ const Header = () => {
 
             <Link to="/rsvp" className="header-cta-button">
               <Icon name="Calendar" size={18} className="mr-2" />
-              RSVP Now
+              {content.rsvp}
             </Link>
 
             <button
@@ -84,7 +124,7 @@ const Header = () => {
       />
       <div className={`mobile-menu ${!isMobileMenuOpen ? 'closed' : ''}`}>
         <div className="mobile-menu-header">
-          <span className="mobile-menu-brand">Eternal Vows</span>
+          <span className="mobile-menu-brand">Fabi & Feli</span>
           <button
             onClick={toggleMobileMenu}
             className="mobile-menu-close"
@@ -108,7 +148,7 @@ const Header = () => {
 
         <Link to="/rsvp" className="mobile-menu-cta">
           <Icon name="Calendar" size={18} className="inline mr-2" />
-          RSVP Now
+          {content.rsvp}
         </Link>
       </div>
     </>
