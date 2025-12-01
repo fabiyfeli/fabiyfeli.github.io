@@ -23,8 +23,8 @@ const RSVPCounter = ({ language }) => {
       return timer;
     };
 
-    const timer1 = animateCounter(87, 'confirmed');
-    const timer2 = animateCounter(23, 'pending');
+    const timer1 = animateCounter(70, 'confirmed');
+    const timer2 = animateCounter(80, 'pending');
 
     return () => {
       clearInterval(timer1);
