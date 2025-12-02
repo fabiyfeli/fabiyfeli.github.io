@@ -1,81 +1,34 @@
 // Guest Book Storage Utilities
 const STORAGE_KEY = 'wedding_guestbook_messages';
 
-// Initial mock messages
-const getInitialMessages = (language = 'es') => [
-  {
-    id: 1,
-    name: "Sarah Johnson",
-    email: "sarah.j@email.com",
-    relationship: language === 'es' ? 'Amiga' : 'Friend',
-    category: language === 'es' ? 'Recuerdo Especial' : 'Special Memory',
-    message: language === 'es' ?
-      "Recuerdo cuando nos conocimos en la universidad. Siempre supe que encontrarías a tu alma gemela. Ver tu amor florecer ha sido una de las mayores alegrías de mi vida. ¡No puedo esperar para celebrar con ustedes!" :
-      "I remember when we first met in college. I always knew you would find your soulmate. Watching your love story unfold has been one of the greatest joys of my life. Can't wait to celebrate with you both!",
-    date: new Date('2025-11-20T14:30:00').toISOString(),
-    likes: 24,
-    photo: "https://images.unsplash.com/photo-1695141482705-7df6fb3df273",
-    photoAlt: "Two young women laughing together at outdoor cafe with coffee cups on sunny day",
-    coupleReply: language === 'es' ?
-      "¡Sarah! Tus palabras nos llenan de alegría. Gracias por ser parte de nuestro viaje. ¡Te queremos!" : 
-      "Sarah! Your words fill our hearts with joy. Thank you for being part of our journey. Love you!"
-  },
-  {
-    id: 2,
-    name: "Michael Chen",
-    email: "m.chen@email.com",
-    relationship: language === 'es' ? 'Colega' : 'Colleague',
-    category: language === 'es' ? 'Buenos Deseos' : 'Well Wishes',
-    message: language === 'es' ?
-      "Trabajar contigo ha sido un placer, pero verte tan feliz es aún mejor. Les deseo una vida llena de amor, risas y aventuras increíbles. ¡Felicidades a la hermosa pareja!" :
-      "Working with you has been a pleasure, but seeing you this happy is even better. Wishing you both a lifetime filled with love, laughter, and amazing adventures. Congratulations to the beautiful couple!",
-    date: new Date('2025-11-21T10:15:00').toISOString(),
-    likes: 18
-  },
-  {
-    id: 3,
-    name: "María García",
-    email: "maria.g@email.com",
-    relationship: language === 'es' ? 'Familia' : 'Family',
-    category: language === 'es' ? 'Consejo' : 'Advice',
-    message: language === 'es' ?
-      "Mis queridos, el matrimonio es un viaje hermoso. Recuerden siempre comunicarse con amor, reír juntos todos los días y nunca irse a dormir enojados. Su amor es una inspiración para todos nosotros. ¡Los amamos profundamente!" :
-      "My dear ones, marriage is a beautiful journey. Always remember to communicate with love, laugh together every day, and never go to bed angry. Your love is an inspiration to all of us. We love you deeply!",
-    date: new Date('2025-11-22T16:45:00').toISOString(),
-    likes: 42,
-    photo: "https://images.unsplash.com/photo-1610507381659-3dc8612d5452",
-    photoAlt: "Extended Hispanic family gathering around dinner table with warm lighting and smiling faces",
-    coupleReply: language === 'es' ?
-      "Tía María, tus consejos siempre han sido nuestra guía. Gracias por tu amor incondicional." :
-      "Aunt María, your advice has always been our guide. Thank you for your unconditional love."
-  }
-];
-
 // Load messages from localStorage
 export const loadMessages = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const messages = JSON.parse(stored);
+      
+      // Check if these are old mock messages (detect by known mock names)
+      const mockNames = ['Sarah Johnson', 'Michael Chen', 'María García', 'David Thompson', 'Emily Rodriguez', 'James Wilson', 'Isabella Martínez', 'Robert Anderson'];
+      const hasMockMessages = messages.some(msg => mockNames.includes(msg.name));
+      
+      // If mock messages detected, clear storage and return empty
+      if (hasMockMessages) {
+        localStorage.removeItem(STORAGE_KEY);
+        return [];
+      }
+      
       // Convert date strings back to Date objects
       return messages.map(msg => ({
         ...msg,
         date: new Date(msg.date)
       }));
     }
-    // If no messages exist, initialize with default messages
-    const initialMessages = getInitialMessages();
-    saveMessages(initialMessages);
-    return initialMessages.map(msg => ({
-      ...msg,
-      date: new Date(msg.date)
-    }));
+    // Return empty array if no messages exist
+    return [];
   } catch (error) {
     console.error('Error loading messages:', error);
-    return getInitialMessages().map(msg => ({
-      ...msg,
-      date: new Date(msg.date)
-    }));
+    return [];
   }
 };
 
@@ -136,4 +89,15 @@ export const toggleLike = (messageId) => {
     return updateMessage(messageId, { likes: currentLikes + 1 });
   }
   return null;
+};
+
+// Clear all messages (for resetting/cleaning)
+export const clearAllMessages = () => {
+  try {
+    localStorage.removeItem(STORAGE_KEY);
+    return true;
+  } catch (error) {
+    console.error('Error clearing messages:', error);
+    return false;
+  }
 };
