@@ -24,7 +24,7 @@ const WeddingDetails = () => {
 
   const content = {
     en: {
-      pageTitle: "Wedding Details - Eternal Vows",
+      pageTitle: "Wedding Details - Fabi & Feli",
       heroTitle: "Wedding Details",
       heroSubtitle: "Everything you need to know for our special day",
       dateInfo: "Saturday, January 31, 2026",
@@ -38,7 +38,7 @@ const WeddingDetails = () => {
       noteContent: "Please RSVP by December 21, 2025 to help us finalize arrangements. We can't wait to celebrate with you!"
     },
     es: {
-      pageTitle: "Detalles de la Boda - Eternal Vows",
+      pageTitle: "Detalles de la Boda - Fabi & Feli",
       heroTitle: "Detalles de la Boda",
       heroSubtitle: "Todo lo que necesitas saber para nuestro día especial",
       dateInfo: "Sábado, 31 de Enero de 2026",

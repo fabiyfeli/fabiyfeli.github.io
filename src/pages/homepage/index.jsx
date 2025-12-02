@@ -3,7 +3,6 @@ import Header from '../../components/Header';
 import HeroSection from './components/HeroSection';
 import WeddingDetailsPreview from './components/WeddingDetailsPreview';
 import RSVPCounter from './components/RSVPCounter';
-import PhotoGalleryPreview from './components/PhotoGalleryPreview';
 import QuickLinks from './components/QuickLinks';
 import Footer from './components/Footer';
 import LanguageToggle from './components/LanguageToggle';
@@ -32,7 +31,6 @@ const Homepage = () => {
         <HeroSection language={language} />
         <RSVPCounter language={language} />
         <WeddingDetailsPreview language={language} />
-        <PhotoGalleryPreview language={language} />
         <QuickLinks language={language} />
       </main>
 

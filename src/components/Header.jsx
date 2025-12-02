@@ -45,7 +45,6 @@ const Header = () => {
       home: 'Home',
       ourStory: 'Our Story',
       weddingDetails: 'Wedding Details',
-      gallery: 'Gallery',
       guestBook: 'Guest Book',
       rsvp: 'RSVP Now'
     },
@@ -53,7 +52,6 @@ const Header = () => {
       home: 'Inicio',
       ourStory: 'Nuestra Historia',
       weddingDetails: 'Detalles de la Boda',
-      gallery: 'Galería',
       guestBook: 'Libro de Invitados',
       rsvp: 'Confirmar Asistencia'
     }
@@ -65,7 +63,6 @@ const Header = () => {
     { path: '/homepage', label: content.home },
     { path: '/our-story', label: content.ourStory },
     { path: '/wedding-details', label: content.weddingDetails },
-    { path: '/photo-gallery', label: content.gallery },
     { path: '/guest-book', label: content.guestBook },
   ];
 

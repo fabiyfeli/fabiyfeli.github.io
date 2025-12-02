@@ -13,7 +13,7 @@ const FutureVision = ({ currentLanguage }) => {
       { icon: 'Users', text: 'Growing our family' },
       { icon: 'Heart', text: 'Growing old together' }],
 
-      image: "https://images.unsplash.com/photo-1570135497084-0debfc780ed8",
+      image: "./assets/images/01FF41ED-5772-4F19-8DF7-22E55B72EE91_1_105_c.jpeg",
       imageAlt: "Romantic couple walking hand in hand on beach at sunset with golden light reflecting on water and gentle waves in background"
     },
     es: {
@@ -26,7 +26,7 @@ const FutureVision = ({ currentLanguage }) => {
       { icon: 'Users', text: 'Hacer crecer nuestra familia' },
       { icon: 'Heart', text: 'Envejecer juntos' }],
 
-      image: "https://images.unsplash.com/photo-1570135497084-0debfc780ed8",
+      image: "./assets/images/01FF41ED-5772-4F19-8DF7-22E55B72EE91_1_105_c.jpeg",
       imageAlt: "Pareja romántica caminando de la mano en la playa al atardecer con luz dorada reflejándose en el agua y olas suaves en el fondo"
     }
   };

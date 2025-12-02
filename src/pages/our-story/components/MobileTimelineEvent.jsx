@@ -32,7 +32,7 @@ const MobileTimelineEvent = ({ event }) => {
             <Image 
               src={event?.image} 
               alt={event?.imageAlt}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top"
             />
           </div>
           {event?.location && (

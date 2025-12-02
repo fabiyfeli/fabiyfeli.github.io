@@ -1,0 +1,21 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background circle with gradient -->
+  <circle cx="16" cy="16" r="16" fill="url(#gradient)"/>
+  
+  <!-- Define gradient -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4a574;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#c4915d;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- First F (Fabi) - slightly rotated and positioned left -->
+  <text x="8" y="22" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="white" opacity="0.9">F</text>
+  
+  <!-- Second F (Feli) - slightly rotated and positioned right, overlapping -->
+  <text x="16" y="22" font-family="Georgia, serif" font-size="18" font-weight="bold" fill="white">F</text>
+  
+  <!-- Small heart accent -->
+  <path d="M16 12c0-1.5-1.5-2.5-3-1.5-1.5-1-3 0-3 1.5 0 1.5 3 3.5 3 3.5s3-2 3-3.5z" fill="white" opacity="0.8" transform="scale(0.6) translate(14, -2)"/>
+</svg>

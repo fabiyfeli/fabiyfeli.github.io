@@ -19,12 +19,6 @@ const QuickLinks = ({ language }) => {
           description: "Learn about our journey together"
         },
         {
-          to: "/photo-gallery",
-          icon: "Camera",
-          title: "Photo Gallery",
-          description: "Browse our engagement photos"
-        },
-        {
           to: "/guest-book",
           icon: "MessageCircle",
           title: "Guest Book",
@@ -48,12 +42,6 @@ const QuickLinks = ({ language }) => {
           description: "Conoce nuestro camino juntos"
         },
         {
-          to: "/photo-gallery",
-          icon: "Camera",
-          title: "Galería de Fotos",
-          description: "Explora nuestras fotos de compromiso"
-        },
-        {
           to: "/guest-book",
           icon: "MessageCircle",
           title: "Libro de Visitas",
@@ -74,7 +62,7 @@ const QuickLinks = ({ language }) => {
           </h2>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {text?.links?.map((link, index) => (
             <Link
               key={index}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import Image from '../../../components/AppImage';
 import Icon from '../../../components/AppIcon';
 
-const MessageCard = ({ message, onReply, currentLanguage }) => {
+const MessageCard = ({ message, onReply, onLike, currentLanguage }) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyText, setReplyText] = useState('');
 
@@ -90,7 +90,10 @@ const MessageCard = ({ message, onReply, currentLanguage }) => {
               <Icon name="MessageCircle" size={16} />
               <span>{currentLanguage === 'es' ? 'Responder' : 'Reply'}</span>
             </button>
-            <button className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200">
+            <button 
+              onClick={() => onLike && onLike(message?.id)}
+              className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors duration-200"
+            >
               <Icon name="Heart" size={16} />
               <span>{message?.likes || 0}</span>
             </button>

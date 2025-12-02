@@ -61,7 +61,7 @@ const Footer = ({ language }) => {
               <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-primary/20">
                 <Icon name="Heart" size={20} color="var(--color-primary)" />
               </div>
-              <span className="ml-3 text-xl font-bold font-headline">Eternal Vows</span>
+              <span className="ml-3 text-xl font-bold font-headline">Fabi & Feli</span>
             </div>
             <p className="text-background/80 text-sm leading-relaxed">
               {text?.tagline}

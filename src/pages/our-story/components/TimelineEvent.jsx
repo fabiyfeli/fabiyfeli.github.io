@@ -43,7 +43,7 @@ const TimelineEvent = ({ event, index, isLeft }) => {
             <Image 
               src={event?.image} 
               alt={event?.imageAlt}
-              className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
+              className="w-full h-full object-cover object-top hover:scale-110 transition-transform duration-500"
             />
           </div>
           {event?.location && (

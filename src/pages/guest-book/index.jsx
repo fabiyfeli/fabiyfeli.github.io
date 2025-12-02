@@ -7,6 +7,7 @@ import MessageForm from './components/MessageForm';
 import FilterBar from './components/FilterBar';
 import StatsSection from './components/StatsSection';
 import LanguageToggle from './components/LanguageToggle';
+import { loadMessages, addMessage, toggleLike, updateMessage } from '../../utils/guestBookStorage';
 
 const GuestBook = () => {
   const [currentLanguage, setCurrentLanguage] = useState('es');
@@ -20,14 +21,24 @@ const GuestBook = () => {
   const [showForm, setShowForm] = useState(false);
 
   useEffect(() => {
-    const savedLanguage = localStorage.getItem('wedding_language');
+    const savedLanguage = localStorage.getItem('preferredLanguage');
     if (savedLanguage) {
       setCurrentLanguage(savedLanguage);
     }
   }, []);
 
   useEffect(() => {
-    const mockMessages = [
+    // Load messages from localStorage
+    const loadedMessages = loadMessages();
+    setMessages(loadedMessages);
+    setFilteredMessages(loadedMessages);
+  }, []);
+
+  // Removed old mock messages - now using localStorage
+
+  useEffect(() => {
+    // This useEffect is no longer needed but kept for reference
+    const skipMockMessages = [
     {
       id: 1,
       name: "Sarah Johnson",
@@ -152,11 +163,8 @@ const GuestBook = () => {
       photo: "https://images.unsplash.com/photo-1732269224039-b476095df44a",
       photoAlt: "Extended family group photo at outdoor gathering with multiple generations smiling together"
     }];
-
-
-    setMessages(mockMessages);
-    setFilteredMessages(mockMessages);
-  }, [currentLanguage]);
+    // Mock messages code kept above for reference but not used
+  }, []);
 
   useEffect(() => {
     let filtered = [...messages];
@@ -205,46 +213,62 @@ const GuestBook = () => {
   };
 
   const handleSubmitMessage = (formData) => {
-    const newMessage = {
-      id: messages?.length + 1,
+    const newMessageData = {
       name: formData?.name,
       email: formData?.email,
       avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1b47d599d-1763299033167.png",
       avatarAlt: "Default avatar showing friendly person with warm smile",
       relationship: formData?.relationship === 'family' ?
-      currentLanguage === 'es' ? 'Familia' : 'Family' :
-      formData?.relationship === 'friend' ?
-      currentLanguage === 'es' ? 'Amigo' : 'Friend' :
-      formData?.relationship === 'colleague' ?
-      currentLanguage === 'es' ? 'Colega' : 'Colleague' :
-      currentLanguage === 'es' ? 'Otro' : 'Other',
+        currentLanguage === 'es' ? 'Familia' : 'Family' :
+        formData?.relationship === 'friend' ?
+        currentLanguage === 'es' ? 'Amigo' : 'Friend' :
+        formData?.relationship === 'colleague' ?
+        currentLanguage === 'es' ? 'Colega' : 'Colleague' :
+        currentLanguage === 'es' ? 'Otro' : 'Other',
       category: formData?.category ?
-      formData?.category === 'memory' ?
-      currentLanguage === 'es' ? 'Recuerdo Especial' : 'Special Memory' :
-      formData?.category === 'wish' ?
-      currentLanguage === 'es' ? 'Buenos Deseos' : 'Well Wishes' :
-      formData?.category === 'advice' ?
-      currentLanguage === 'es' ? 'Consejo' : 'Advice' :
-      currentLanguage === 'es' ? 'Felicitaciones' : 'Congratulations' :
-      '',
+        formData?.category === 'memory' ?
+        currentLanguage === 'es' ? 'Recuerdo Especial' : 'Special Memory' :
+        formData?.category === 'wish' ?
+        currentLanguage === 'es' ? 'Buenos Deseos' : 'Well Wishes' :
+        formData?.category === 'advice' ?
+        currentLanguage === 'es' ? 'Consejo' : 'Advice' :
+        currentLanguage === 'es' ? 'Felicitaciones' : 'Congratulations' :
+        '',
       message: formData?.message,
-      date: new Date(),
-      likes: 0,
       photo: formData?.photo ? URL.createObjectURL(formData?.photo) : null,
       photoAlt: formData?.photo ? "Guest uploaded photo shared with wedding message" : null
     };
 
-    setMessages((prev) => [newMessage, ...prev]);
+    // Add message to localStorage
+    const savedMessage = addMessage(newMessageData);
+    
+    // Reload messages from storage
+    const updatedMessages = loadMessages();
+    setMessages(updatedMessages);
+    setFilteredMessages(updatedMessages);
+    
     setShowForm(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleReply = (messageId, replyText) => {
-    setMessages((prev) => prev?.map((msg) =>
-    msg?.id === messageId ?
-    { ...msg, coupleReply: replyText } :
-    msg
-    ));
+    // Update message in localStorage
+    updateMessage(messageId, { coupleReply: replyText });
+    
+    // Reload messages from storage
+    const updatedMessages = loadMessages();
+    setMessages(updatedMessages);
+    setFilteredMessages(updatedMessages);
+  };
+
+  const handleLike = (messageId) => {
+    // Toggle like in localStorage
+    toggleLike(messageId);
+    
+    // Reload messages from storage
+    const updatedMessages = loadMessages();
+    setMessages(updatedMessages);
+    setFilteredMessages(updatedMessages);
   };
 
   const stats = {
@@ -256,7 +280,7 @@ const GuestBook = () => {
 
   const content = {
     en: {
-      title: "Guest Book - Eternal Vows",
+      title: "Guest Book - Fabi & Feli",
       heading: "Guest Book",
       subheading: "Share Your Love & Memories",
       description: "Leave your heartfelt messages, share cherished memories, and express your excitement for our special day. Your words mean the world to us!",
@@ -266,7 +290,7 @@ const GuestBook = () => {
       noMessagesDesc: "Be the first to leave a message!"
     },
     es: {
-      title: "Libro de Invitados - Eternal Vows",
+      title: "Libro de Invitados - Fabi & Feli",
       heading: "Libro de Invitados",
       subheading: "Comparte tu Amor y Recuerdos",
       description: "Deja tus mensajes sinceros, comparte recuerdos preciados y expresa tu emoción por nuestro día especial. ¡Tus palabras significan el mundo para nosotros!",
@@ -343,6 +367,7 @@ const GuestBook = () => {
                   key={message?.id}
                   message={message}
                   onReply={handleReply}
+                  onLike={handleLike}
                   currentLanguage={currentLanguage} />
 
                 )}

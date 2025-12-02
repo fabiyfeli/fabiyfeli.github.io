@@ -4,7 +4,6 @@ import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
 import NotFound from "pages/NotFound";
 import RSVP from './pages/rsvp';
-import PhotoGallery from './pages/photo-gallery';
 import WeddingDetails from './pages/wedding-details';
 import OurStory from './pages/our-story';
 import Homepage from './pages/homepage';
@@ -19,7 +18,6 @@ const Routes = () => {
         {/* Define your route here */}
         <Route path="/" element={<Homepage />} />
         <Route path="/rsvp" element={<RSVP />} />
-        <Route path="/photo-gallery" element={<PhotoGallery />} />
         <Route path="/wedding-details" element={<WeddingDetails />} />
         <Route path="/our-story" element={<OurStory />} />
         <Route path="/homepage" element={<Homepage />} />
