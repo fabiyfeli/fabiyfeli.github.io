@@ -9,6 +9,7 @@ import SpecialRequirementsStep from './components/SpecialRequirementsStep';
 import ReviewStep from './components/ReviewStep';
 import ConfirmationModal from './components/ConfirmationModal';
 import Icon from '../../components/AppIcon';
+import { addRSVP } from '../../utils/rsvpStorage';
 
 const RSVP = () => {
   const [currentStep, setCurrentStep] = useState(1);
@@ -49,7 +50,13 @@ const RSVP = () => {
   };
 
   const handleSubmit = () => {
-    setShowConfirmation(true);
+    try {
+      addRSVP(formData);
+      setShowConfirmation(true);
+    } catch (error) {
+      console.error('Error saving RSVP:', error);
+      alert('Hubo un error al guardar tu confirmación. Por favor intenta de nuevo.');
+    }
   };
 
   const renderStep = () => {
