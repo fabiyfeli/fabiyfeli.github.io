@@ -76,7 +76,7 @@ const WeddingDetails = () => {
       address: "Caupolicán 8611, Quilicura, Región Metropolitana, Chile",
       phone: "(56) 9 8551 7187",
       parking: "Complimentary parking for all guests.",
-      image: "public/assets/images/481010412_18057267074042169_1913883596162477005_n.jpg",
+      image: "./assets/images/481010412_18057267074042169_1913883596162477005_n.jpg",
       imageAlt: "Luxurious grand ballroom with sparkling crystal chandeliers, polished marble floors, elegant round tables with white linens, and floor-to-ceiling windows showcasing city skyline",
       lat: -33.34131260777949,
       lng: -70.69443605191101
@@ -91,7 +91,7 @@ const WeddingDetails = () => {
       address: "Caupolicán 8611, Quilicura, Región Metropolitana, Chile",
       phone: "(56) 9 8551 7187",
       parking: "Estacionamiento gratuito disponible en el lote adyacente.",
-      image: "public/assets/images/540782938_18279433261272715_2421666563502127504_n.jpg",
+      image: "./assets/images/540782938_18279433261272715_2421666563502127504_n.jpg",
       imageAlt: "Interior elegante de capilla histórica con ornamentados vitrales, bancos de madera y techo abovedado creando atmósfera sagrada íntima para ceremonia de boda",
       lat: -33.34131260777949,
       lng: -70.69443605191101

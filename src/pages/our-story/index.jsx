@@ -42,7 +42,7 @@ const OurStory = () => {
       description: "A blind date from Tinder that changed everything.",
       fullDescription: "A blind date from Tinder that changed everything. We matched online and decided to meet in person at Cerro San Cristóbal. What started as a nervous first date turned into hours of laughter and connection. From that moment, we knew something special was beginning.",
       icon: "Sparkles",
-      image: "public/assets/images/0001245_teleferico-doble-oasis_415.webp",
+      image: "./assets/images/0001245_teleferico-doble-oasis_415.webp",
       imageAlt: "Cable car gondola at Cerro San Cristóbal with scenic mountain views of Santiago",
       location: "Cerro San Cristobal, Santiago",
       quote: "It felt like I had known you my entire life"
@@ -117,7 +117,7 @@ const OurStory = () => {
       description: "Una cita ciega de Tinder que cambió todo.",
       fullDescription: "Una cita ciega de Tinder que cambió todo. Hicimos match en línea y decidimos conocernos en persona en el Cerro San Cristóbal. Lo que comenzó como una primera cita nerviosa se convirtió en horas de risas y conexión. Desde ese momento, supimos que algo especial estaba comenzando.",
       icon: "Sparkles",
-      image: "public/assets/images/0001245_teleferico-doble-oasis_415.webp",
+      image: "./assets/images/0001245_teleferico-doble-oasis_415.webp",
       imageAlt: "Teleférico del Cerro San Cristóbal con vistas panorámicas de Santiago",
       location: "Cerro San Cristobal, Santiago",
       quote: "Sentí como si te hubiera conocido toda mi vida"
