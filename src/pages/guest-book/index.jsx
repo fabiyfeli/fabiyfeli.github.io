@@ -216,8 +216,6 @@ const GuestBook = () => {
     const newMessageData = {
       name: formData?.name,
       email: formData?.email,
-      avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1b47d599d-1763299033167.png",
-      avatarAlt: "Default avatar showing friendly person with warm smile",
       relationship: formData?.relationship === 'family' ?
         currentLanguage === 'es' ? 'Familia' : 'Family' :
         formData?.relationship === 'friend' ?
@@ -251,9 +249,27 @@ const GuestBook = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleReply = (messageId, replyText) => {
-    // Update message in localStorage
-    updateMessage(messageId, { coupleReply: replyText });
+  const handleReply = (messageId, replyData) => {
+    const messages = loadMessages();
+    const message = messages.find(msg => msg.id === messageId);
+    
+    if (message) {
+      // Initialize replies array if it doesn't exist
+      const replies = message.replies || [];
+      
+      // Add new reply
+      const newReply = {
+        text: replyData.text,
+        isCouple: replyData.isCouple,
+        replierName: replyData.replierName,
+        date: new Date().toISOString()
+      };
+      
+      replies.push(newReply);
+      
+      // Update message in localStorage
+      updateMessage(messageId, { replies });
+    }
     
     // Reload messages from storage
     const updatedMessages = loadMessages();

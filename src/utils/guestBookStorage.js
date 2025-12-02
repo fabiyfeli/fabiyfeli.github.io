@@ -7,8 +7,6 @@ const getInitialMessages = (language = 'es') => [
     id: 1,
     name: "Sarah Johnson",
     email: "sarah.j@email.com",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1985c262f-1763294244026.png",
-    avatarAlt: "Professional headshot of blonde woman with warm smile wearing light blue blouse",
     relationship: language === 'es' ? 'Amiga' : 'Friend',
     category: language === 'es' ? 'Recuerdo Especial' : 'Special Memory',
     message: language === 'es' ?
@@ -26,8 +24,6 @@ const getInitialMessages = (language = 'es') => [
     id: 2,
     name: "Michael Chen",
     email: "m.chen@email.com",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1cb933d20-1763293416126.png",
-    avatarAlt: "Professional headshot of Asian man with black hair wearing navy suit and glasses",
     relationship: language === 'es' ? 'Colega' : 'Colleague',
     category: language === 'es' ? 'Buenos Deseos' : 'Well Wishes',
     message: language === 'es' ?
@@ -40,8 +36,6 @@ const getInitialMessages = (language = 'es') => [
     id: 3,
     name: "María García",
     email: "maria.g@email.com",
-    avatar: "https://img.rocket.new/generatedImages/rocket_gen_img_19ad23742-1763295892621.png",
-    avatarAlt: "Professional headshot of Hispanic woman with long dark hair wearing elegant red dress",
     relationship: language === 'es' ? 'Familia' : 'Family',
     category: language === 'es' ? 'Consejo' : 'Advice',
     message: language === 'es' ?
