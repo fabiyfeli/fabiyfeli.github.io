@@ -126,7 +126,7 @@ const Footer = ({ language }) => {
             </p>
             <div className="flex items-center gap-2 text-background/60 text-sm">
               <Icon name="Heart" size={16} color="var(--color-error)" className="heartbeat" />
-              <span>June 15, 2026</span>
+              <span>January 31, 2026</span>
             </div>
           </div>
         </div>

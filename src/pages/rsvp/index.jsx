@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Header from '../../components/Header';
 import RSVPHero from './components/RSVPHero';
 import ProgressIndicator from './components/ProgressIndicator';
@@ -8,10 +8,12 @@ import MealPreferencesStep from './components/MealPreferencesStep';
 import SpecialRequirementsStep from './components/SpecialRequirementsStep';
 import ReviewStep from './components/ReviewStep';
 import ConfirmationModal from './components/ConfirmationModal';
+import LanguageToggle from './components/LanguageToggle';
 import Icon from '../../components/AppIcon';
 import { addRSVP } from '../../utils/rsvpStorage';
 
 const RSVP = () => {
+  const [language, setLanguage] = useState('es');
   const [currentStep, setCurrentStep] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [formData, setFormData] = useState({
@@ -34,6 +36,18 @@ const RSVP = () => {
     needsAccommodation: false,
     specialNotes: ''
   });
+
+  useEffect(() => {
+    const savedLanguage = localStorage.getItem('preferredLanguage');
+    if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'es')) {
+      setLanguage(savedLanguage);
+    }
+  }, []);
+
+  const handleLanguageChange = (newLanguage) => {
+    setLanguage(newLanguage);
+    localStorage.setItem('preferredLanguage', newLanguage);
+  };
 
   const updateFormData = (updates) => {
     setFormData(prev => ({ ...prev, ...updates }));
@@ -67,6 +81,7 @@ const RSVP = () => {
             formData={formData}
             onUpdate={updateFormData}
             onNext={handleNext}
+            language={language}
           />
         );
       case 2:
@@ -76,6 +91,7 @@ const RSVP = () => {
             onUpdate={updateFormData}
             onNext={handleNext}
             onBack={handleBack}
+            language={language}
           />
         );
       case 3:
@@ -85,6 +101,7 @@ const RSVP = () => {
             onUpdate={updateFormData}
             onNext={handleNext}
             onBack={handleBack}
+            language={language}
           />
         );
       case 4:
@@ -94,6 +111,7 @@ const RSVP = () => {
             onUpdate={updateFormData}
             onNext={handleNext}
             onBack={handleBack}
+            language={language}
           />
         );
       case 5:
@@ -102,6 +120,7 @@ const RSVP = () => {
             formData={formData}
             onBack={handleBack}
             onSubmit={handleSubmit}
+            language={language}
           />
         );
       default:
@@ -112,12 +131,13 @@ const RSVP = () => {
   return (
     <div className="min-h-screen bg-background">
       <Header />
+      <LanguageToggle language={language} onLanguageChange={handleLanguageChange} />
       <main className="main-content">
-        <RSVPHero />
+        <RSVPHero language={language} />
 
         <section className="py-12 sm:py-16 lg:py-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <ProgressIndicator currentStep={currentStep} totalSteps={5} />
+            <ProgressIndicator currentStep={currentStep} totalSteps={5} language={language} />
             
             {renderStep()}
 
@@ -175,6 +195,7 @@ const RSVP = () => {
         <ConfirmationModal
           formData={formData}
           onClose={() => setShowConfirmation(false)}
+          language={language}
         />
       )}
     </div>
