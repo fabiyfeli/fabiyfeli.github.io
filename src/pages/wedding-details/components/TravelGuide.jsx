@@ -54,7 +54,7 @@ const TravelGuide = ({ language }) => {
         name: "Barrio Lastarria",
         description: "Bohemian neighborhood with art, restaurants, and nightlife",
         distance: "18 km",
-        image: "./assets/images/barrio-lastarria-2.png",
+        image: "./assets/images/barrio-lastarria.png",
         imageAlt: "Colorful Barrio Lastarria streets with murals, cafes, and vibrant cultural atmosphere"
       }],
 
@@ -130,7 +130,7 @@ const TravelGuide = ({ language }) => {
         name: "Barrio Lastarria",
         description: "Barrio bohemio con arte, restaurantes y vida nocturna",
         distance: "18 km",
-        image: "./assets/images/barrio-lastarria-2.png",
+        image: "./assets/images/barrio-lastarria.png",
         imageAlt: "Calles coloridas de Barrio Lastarria con murales, cafés y vibrante atmósfera cultural"
       }],
 

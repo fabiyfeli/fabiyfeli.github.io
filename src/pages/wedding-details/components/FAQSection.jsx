@@ -59,7 +59,8 @@ const FAQSection = ({ language }) => {
         },
         {
           question: "What about gifts?",
-          answer: "Your presence at our wedding is the greatest gift we could ask for! However, if you wish to honor us with a gift, monetary contributions are welcome and greatly appreciated."
+          answer: "Your presence at our wedding is the greatest gift we could ask for! However, if you wish to honor us with a gift, monetary contributions are welcome and greatly appreciated.\n\nMercado Pago: https://link.mercadopago.cl/matrifabifeli\nInternational (Wise): https://wise.com/pay/me/juana100",
+          showBankDetails: true
         }
       ]
     },
@@ -117,7 +118,8 @@ const FAQSection = ({ language }) => {
         },
         {
           question: "¿Qué pasa con los regalos?",
-          answer: "¡Tu presencia en nuestra boda es el mejor regalo que podríamos pedir! Sin embargo, si deseas honrarnos con un regalo, las contribuciones monetarias son bienvenidas y muy apreciadas."
+          answer: "¡Tu presencia en nuestra boda es el mejor regalo que podríamos pedir! Sin embargo, si deseas honrarnos con un regalo, las contribuciones monetarias son bienvenidas y muy apreciadas.\n\nMercado Pago: https://link.mercadopago.cl/matrifabifeli\nInternacional (Wise): https://wise.com/pay/me/juana100",
+          showBankDetails: true
         }
       ]
     }
@@ -127,6 +129,38 @@ const FAQSection = ({ language }) => {
 
   const toggleFAQ = (index) => {
     setOpenIndex(openIndex === index ? null : index);
+  };
+
+  const renderAnswerWithLinks = (text) => {
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const parts = text.split(urlRegex);
+    
+    return parts.map((part, i) => {
+      if (part.match(urlRegex)) {
+        let linkText = language === 'en' ? 'Click here' : 'Haz clic aquí';
+        
+        // Customize link text based on URL
+        if (part.includes('mercadopago')) {
+          linkText = 'Mercado Pago';
+        } else if (part.includes('wise.com')) {
+          linkText = 'Wise';
+        }
+        
+        return (
+          <a
+            key={i}
+            href={part}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-primary hover:text-primary/80 underline font-medium inline-flex items-center gap-1"
+          >
+            {linkText}
+            <Icon name="ExternalLink" size={14} />
+          </a>
+        );
+      }
+      return part;
+    });
   };
 
   return (
@@ -165,13 +199,42 @@ const FAQSection = ({ language }) => {
             </button>
             <div
               className={`overflow-hidden transition-all duration-300 ${
-                openIndex === index ? 'max-h-96' : 'max-h-0'
+                openIndex === index ? 'max-h-[600px]' : 'max-h-0'
               }`}
             >
               <div className="px-6 pb-6">
                 <p className="text-muted-foreground leading-relaxed">
-                  {faq?.answer}
+                  {renderAnswerWithLinks(faq?.answer)}
                 </p>
+                {faq?.showBankDetails && (
+                  <div className="mt-6 bg-muted/30 rounded-lg p-6 border border-border">
+                    <h4 className="font-semibold text-foreground mb-4 text-center">
+                      {language === 'en' ? 'Bank Transfer Details' : 'Datos para Transferencia Bancaria'}
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="bg-background rounded-lg p-4 border border-border">
+                        <div className="space-y-2 text-sm">
+                          <p className="text-foreground font-semibold">Fabiana Elizabeth Castro Marcano</p>
+                          <p className="text-muted-foreground">RUT: 26.282.997-9</p>
+                          <p className="text-muted-foreground">Cuenta Corriente</p>
+                          <p className="text-muted-foreground">0 000 90 21320 2</p>
+                          <p className="text-muted-foreground">Banco Santander</p>
+                          <p className="text-muted-foreground text-xs">fabiana.e.c.m@gmail.com</p>
+                        </div>
+                      </div>
+                      <div className="bg-background rounded-lg p-4 border border-border">
+                        <div className="space-y-2 text-sm">
+                          <p className="text-foreground font-semibold">Felipe Aguilera</p>
+                          <p className="text-muted-foreground">RUT: 17.911.849-1</p>
+                          <p className="text-muted-foreground">Cuenta Corriente</p>
+                          <p className="text-muted-foreground">00-022-23631-07</p>
+                          <p className="text-muted-foreground">Banco de Chile</p>
+                          <p className="text-muted-foreground text-xs">f.millacura.a@gmail.com</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
