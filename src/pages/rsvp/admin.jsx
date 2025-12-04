@@ -156,21 +156,37 @@ const RSVPAdmin = () => {
     }
   };
 
-  const filteredRSVPs = rsvps.filter(rsvp => {
-    const matchesFilter = 
-      filter === 'all' || 
-      (filter === 'attending' && rsvp.attendance === 'yes') ||
-      (filter === 'notAttending' && rsvp.attendance === 'no') ||
-      (filter === 'pending' && !rsvp.approved) ||
-      (filter === 'approved' && rsvp.approved);
-    
-    const matchesSearch = 
-      searchTerm === '' ||
-      `${rsvp.firstName} ${rsvp.lastName}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      rsvp.email.toLowerCase().includes(searchTerm.toLowerCase());
+  const filteredRSVPs = rsvps
+    .filter(rsvp => {
+      // Apply filter logic
+      let matchesFilter = false;
+      
+      if (filter === 'all') {
+        matchesFilter = true;
+      } else if (filter === 'attending') {
+        matchesFilter = rsvp.attendance === 'yes';
+      } else if (filter === 'notAttending') {
+        matchesFilter = rsvp.attendance === 'no';
+      } else if (filter === 'pending') {
+        matchesFilter = rsvp.approved === false;
+      } else if (filter === 'approved') {
+        matchesFilter = rsvp.approved === true;
+      }
+      
+      // Apply search filter
+      const matchesSearch = 
+        searchTerm === '' ||
+        `${rsvp.firstName || ''} ${rsvp.lastName || ''}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (rsvp.email || '').toLowerCase().includes(searchTerm.toLowerCase());
 
-    return matchesFilter && matchesSearch;
-  });
+      return matchesFilter && matchesSearch;
+    })
+    .sort((a, b) => {
+      // Sort by submission date (newest first)
+      const dateA = new Date(a.submittedAt || 0);
+      const dateB = new Date(b.submittedAt || 0);
+      return dateB - dateA;
+    });
 
   if (!isAuth) {
     return (

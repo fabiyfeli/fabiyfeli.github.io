@@ -12,10 +12,32 @@ export const loadRSVPs = () => {
     if (stored) {
       const rsvps = JSON.parse(stored);
       // Convert date strings back to Date objects
-      return rsvps.map(rsvp => ({
+      const rsvpsWithDates = rsvps.map(rsvp => ({
         ...rsvp,
         submittedAt: new Date(rsvp.submittedAt)
       }));
+      
+      // Remove duplicates by ID (keep the most recent one)
+      const uniqueRsvps = [];
+      const seenIds = new Set();
+      
+      // Sort by submission date (newest first) to keep most recent duplicates
+      rsvpsWithDates.sort((a, b) => b.submittedAt - a.submittedAt);
+      
+      for (const rsvp of rsvpsWithDates) {
+        if (!seenIds.has(rsvp.id)) {
+          seenIds.add(rsvp.id);
+          uniqueRsvps.push(rsvp);
+        }
+      }
+      
+      // If we removed duplicates, save the clean version
+      if (uniqueRsvps.length < rsvpsWithDates.length) {
+        console.log(`Removed ${rsvpsWithDates.length - uniqueRsvps.length} duplicate RSVPs`);
+        saveRSVPs(uniqueRsvps);
+      }
+      
+      return uniqueRsvps;
     }
     return [];
   } catch (error) {
@@ -43,9 +65,19 @@ export const saveRSVPs = (rsvps) => {
 // Add a new RSVP
 export const addRSVP = (rsvpData) => {
   const rsvps = loadRSVPs();
+  // Generate unique ID using timestamp + random number to avoid collisions
+  const generateUniqueId = () => {
+    let newId;
+    const existingIds = new Set(rsvps.map(r => r.id));
+    do {
+      newId = Date.now() + Math.floor(Math.random() * 10000);
+    } while (existingIds.has(newId));
+    return newId;
+  };
+  
   const rsvpWithMetadata = {
     ...rsvpData,
-    id: Date.now(), // Use timestamp as unique ID
+    id: generateUniqueId(),
     submittedAt: new Date(),
     approved: false // New RSVPs need approval
   };
