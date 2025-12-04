@@ -73,6 +73,32 @@ const RSVP = () => {
     }
   };
 
+  const handleCloseConfirmation = () => {
+    setShowConfirmation(false);
+    // Reset form and go back to first step
+    setCurrentStep(1);
+    setFormData({
+      firstName: '',
+      lastName: '',
+      email: '',
+      phone: '',
+      attendance: '',
+      language: '',
+      hasPlusOne: false,
+      plusOneFirstName: '',
+      plusOneLastName: '',
+      mealPreference: '',
+      plusOneMealPreference: '',
+      dietaryRestrictions: '',
+      needsWheelchairAccess: false,
+      needsHearingAssistance: false,
+      needsVisualAssistance: false,
+      needsTransportation: false,
+      needsAccommodation: false,
+      specialNotes: ''
+    });
+  };
+
   const renderStep = () => {
     switch (currentStep) {
       case 1:
@@ -199,7 +225,7 @@ const RSVP = () => {
       {showConfirmation && (
         <ConfirmationModal
           formData={formData}
-          onClose={() => setShowConfirmation(false)}
+          onClose={handleCloseConfirmation}
           language={language}
         />
       )}
