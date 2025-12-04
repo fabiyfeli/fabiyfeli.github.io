@@ -2,7 +2,32 @@ import { useEffect } from 'react';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 
-const ConfirmationModal = ({ formData, onClose }) => {
+const ConfirmationModal = ({ formData, onClose, language = 'es' }) => {
+  const content = {
+    es: {
+      title: '¡Confirmación Recibida!',
+      messageAttending: (name) => `¡Gracias por confirmar tu asistencia, ${name}! No podemos esperar a celebrar contigo.`,
+      messageNotAttending: (name) => `Gracias por hacernos saber, ${name}. Te extrañaremos en nuestro día especial.`,
+      emailSentTitle: 'Correo de Confirmación Enviado',
+      emailSentDesc: (email) => `Hemos enviado una confirmación a ${email} con todos los detalles.`,
+      calendarTitle: 'Marca tu Calendario',
+      calendarDesc: 'Te enviaremos un recordatorio cerca de la fecha junto con los detalles del lugar e indicaciones.',
+      close: 'Cerrar'
+    },
+    en: {
+      title: 'RSVP Confirmed!',
+      messageAttending: (name) => `Thank you for confirming your attendance, ${name}! We can't wait to celebrate with you.`,
+      messageNotAttending: (name) => `Thank you for letting us know, ${name}. You'll be missed on our special day.`,
+      emailSentTitle: 'Confirmation Email Sent',
+      emailSentDesc: (email) => `We've sent a confirmation to ${email} with all the details.`,
+      calendarTitle: 'Mark Your Calendar',
+      calendarDesc: 'We\'ll send you a reminder closer to the date along with venue details and directions.',
+      close: 'Close'
+    }
+  };
+
+  const t = content[language];
+
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     return () => {
@@ -19,13 +44,13 @@ const ConfirmationModal = ({ formData, onClose }) => {
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-headline text-center text-foreground mb-2">
-            RSVP Confirmed!
+            {t.title}
           </h2>
 
           <p className="text-center text-muted-foreground mb-6">
             {formData?.attendance === 'yes'
-              ? `Thank you for confirming your attendance, ${formData?.firstName}! We can't wait to celebrate with you.`
-              : `Thank you for letting us know, ${formData?.firstName}. You'll be missed on our special day.`}
+              ? t.messageAttending(formData?.firstName)
+              : t.messageNotAttending(formData?.firstName)}
           </p>
 
           <div className="bg-background rounded-lg p-4 mb-6">
@@ -33,10 +58,10 @@ const ConfirmationModal = ({ formData, onClose }) => {
               <Icon name="Mail" size={20} color="var(--color-primary)" className="mt-0.5" />
               <div>
                 <p className="text-sm font-medium text-foreground mb-1">
-                  Confirmation Email Sent
+                  {t.emailSentTitle}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  We've sent a confirmation to <span className="font-medium">{formData?.email}</span> with all the details.
+                  {t.emailSentDesc(<span className="font-medium">{formData?.email}</span>)}
                 </p>
               </div>
             </div>
@@ -48,10 +73,10 @@ const ConfirmationModal = ({ formData, onClose }) => {
                 <Icon name="Calendar" size={20} color="var(--color-primary)" className="mt-0.5" />
                 <div>
                   <p className="text-sm font-medium text-foreground mb-1">
-                    Mark Your Calendar
+                    {t.calendarTitle}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    We'll send you a reminder closer to the date along with venue details and directions.
+                    {t.calendarDesc}
                   </p>
                 </div>
               </div>
@@ -64,7 +89,7 @@ const ConfirmationModal = ({ formData, onClose }) => {
             onClick={onClose}
             className="w-full"
           >
-            Close
+            {t.close}
           </Button>
         </div>
       </div>

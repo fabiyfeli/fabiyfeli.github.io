@@ -1,14 +1,20 @@
 import { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
+import { getRSVPStats } from '../../../utils/rsvpStorage';
 
 const RSVPCounter = ({ language }) => {
   const [stats, setStats] = useState({
     confirmed: 0,
     pending: 0,
-    total: 150
+    total: 150 // Default total invited guests (can be updated manually)
   });
 
   useEffect(() => {
+    // Load real RSVP stats
+    const rsvpStats = getRSVPStats();
+    const targetConfirmed = rsvpStats.totalGuests || 0; // Approved guests who will attend
+    const targetPending = rsvpStats.pending || 0;
+
     const animateCounter = (target, key) => {
       let current = 0;
       const increment = target / 50;
@@ -23,8 +29,8 @@ const RSVPCounter = ({ language }) => {
       return timer;
     };
 
-    const timer1 = animateCounter(70, 'confirmed');
-    const timer2 = animateCounter(80, 'pending');
+    const timer1 = animateCounter(targetConfirmed, 'confirmed');
+    const timer2 = animateCounter(targetPending, 'pending');
 
     return () => {
       clearInterval(timer1);

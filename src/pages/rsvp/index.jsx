@@ -81,10 +81,11 @@ const RSVP = () => {
             formData={formData}
             onUpdate={updateFormData}
             onNext={handleNext}
+            onSubmit={handleSubmit}
             language={language}
           />
         );
-      case 2:
+      /* case 2:
         return (
           <PlusOneStep
             formData={formData}
@@ -93,8 +94,8 @@ const RSVP = () => {
             onBack={handleBack}
             language={language}
           />
-        );
-      case 3:
+        ); */
+      /* case 2:
         return (
           <MealPreferencesStep
             formData={formData}
@@ -103,8 +104,8 @@ const RSVP = () => {
             onBack={handleBack}
             language={language}
           />
-        );
-      case 4:
+        ); */
+      case 2:
         return (
           <SpecialRequirementsStep
             formData={formData}
@@ -114,7 +115,7 @@ const RSVP = () => {
             language={language}
           />
         );
-      case 5:
+      case 3:
         return (
           <ReviewStep
             formData={formData}
@@ -137,7 +138,7 @@ const RSVP = () => {
 
         <section className="py-12 sm:py-16 lg:py-20">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <ProgressIndicator currentStep={currentStep} totalSteps={5} language={language} />
+            <ProgressIndicator currentStep={currentStep} totalSteps={3} language={language} />
             
             {renderStep()}
 
@@ -147,9 +148,13 @@ const RSVP = () => {
                   <Icon name="HelpCircle" size={20} color="var(--color-primary)" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-foreground mb-2">Need Help?</h3>
+                  <h3 className="text-lg font-semibold text-foreground mb-2">
+                    {language === 'es' ? '¿Necesitas ayuda?' : 'Need Help?'}
+                  </h3>
                   <p className="text-sm text-muted-foreground mb-3">
-                    If you have any questions or need assistance with your RSVP, please don't hesitate to reach out to us.
+                    {language === 'es' 
+                      ? 'Si tienes alguna pregunta o necesitas ayuda con tu confirmación, no dudes en contactarnos.'
+                      : 'If you have any questions or need assistance with your RSVP, please don\'t hesitate to reach out to us.'}
                   </p>
                   <div className="flex flex-col sm:flex-row gap-3">
                     <a
@@ -160,11 +165,11 @@ const RSVP = () => {
                       contact@fabiyfeli.cl
                     </a>
                     <a
-                      href="tel:+15551234567"
+                      href="tel:+56934340007"
                       className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
                     >
                       <Icon name="Phone" size={16} />
-                      +1 (555) 123-4567
+                      +56 (9) 34340007
                     </a>
                   </div>
                 </div>

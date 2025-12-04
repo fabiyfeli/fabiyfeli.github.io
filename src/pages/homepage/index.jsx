@@ -4,7 +4,7 @@ import HeroSection from './components/HeroSection';
 import WeddingDetailsPreview from './components/WeddingDetailsPreview';
 import RSVPCounter from './components/RSVPCounter';
 import QuickLinks from './components/QuickLinks';
-import Footer from './components/Footer';
+import Footer from '../our-story/components/Footer';
 import LanguageToggle from './components/LanguageToggle';
 
 const Homepage = () => {

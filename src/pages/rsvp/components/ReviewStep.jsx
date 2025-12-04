@@ -2,15 +2,82 @@ import { useState } from 'react';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 
-const ReviewStep = ({ formData, onBack, onSubmit }) => {
+const ReviewStep = ({ formData, onBack, onSubmit, language = 'es' }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const content = {
+    es: {
+      title: 'Revisa tu Confirmación',
+      description: 'Por favor revisa tu información antes de enviar. Puedes regresar para hacer cambios.',
+      guestInfo: 'Información del Invitado',
+      name: 'Nombre',
+      email: 'Correo',
+      phone: 'Teléfono',
+      attendance: 'Asistencia',
+      attendanceYes: 'Acepto con alegría',
+      attendanceNo: 'Lamentablemente no podré',
+      language: 'Idioma',
+      plusOne: 'Acompañante',
+      mealPreferences: 'Preferencias de Comida',
+      yourMeal: 'Tu Comida',
+      plusOneMeal: 'Comida del Acompañante',
+      dietaryRestrictions: 'Restricciones Alimentarias',
+      specialRequirements: 'Requisitos Especiales',
+      wheelchairAccess: 'Acceso para Silla de Ruedas',
+      hearingAssistance: 'Asistencia Auditiva',
+      visualAssistance: 'Asistencia Visual',
+      transportation: 'Transporte',
+      accommodation: 'Alojamiento',
+      additionalNotes: 'Notas Adicionales',
+      required: 'Requerido',
+      assistanceNeeded: 'Asistencia necesaria',
+      recommendationsNeeded: 'Recomendaciones necesarias',
+      notProvided: 'No proporcionado',
+      back: 'Atrás',
+      submit: 'Enviar Confirmación',
+      submitting: 'Enviando...'
+    },
+    en: {
+      title: 'Review Your RSVP',
+      description: 'Please review your information before submitting. You can go back to make any changes.',
+      guestInfo: 'Guest Information',
+      name: 'Name',
+      email: 'Email',
+      phone: 'Phone',
+      attendance: 'Attendance',
+      attendanceYes: 'Joyfully Accept',
+      attendanceNo: 'Regretfully Decline',
+      language: 'Language',
+      plusOne: 'Plus One',
+      mealPreferences: 'Meal Preferences',
+      yourMeal: 'Your Meal',
+      plusOneMeal: 'Plus One Meal',
+      dietaryRestrictions: 'Dietary Restrictions',
+      specialRequirements: 'Special Requirements',
+      wheelchairAccess: 'Wheelchair Access',
+      hearingAssistance: 'Hearing Assistance',
+      visualAssistance: 'Visual Assistance',
+      transportation: 'Transportation',
+      accommodation: 'Accommodation',
+      additionalNotes: 'Additional Notes',
+      required: 'Required',
+      assistanceNeeded: 'Assistance needed',
+      recommendationsNeeded: 'Recommendations needed',
+      notProvided: 'Not provided',
+      back: 'Back',
+      submit: 'Submit RSVP',
+      submitting: 'Submitting...'
+    }
+  };
+
+  const t = content[language];
+
   const mealLabels = {
-    beef: 'Grilled Beef Tenderloin',
-    chicken: 'Herb-Crusted Chicken',
-    fish: 'Pan-Seared Salmon',
-    vegetarian: 'Vegetarian Risotto',
-    vegan: 'Vegan Mediterranean Bowl'
+    beef: language === 'es' ? 'Lomo de Res a la Parrilla' : 'Grilled Beef Tenderloin',
+    chicken: language === 'es' ? 'Pollo con Hierbas' : 'Herb-Crusted Chicken',
+    fish: language === 'es' ? 'Salmón a la Plancha' : 'Pan-Seared Salmon',
+    vegetarian: language === 'es' ? 'Risotto Vegetariano' : 'Vegetarian Risotto',
+    vegan: language === 'es' ? 'Bowl Mediterráneo Vegano' : 'Vegan Mediterranean Bowl'
   };
 
   const handleSubmit = async () => {
@@ -36,7 +103,7 @@ const ReviewStep = ({ formData, onBack, onSubmit }) => {
   const InfoRow = ({ label, value }) => (
     <div className="flex justify-between items-start">
       <span className="text-sm text-muted-foreground">{label}:</span>
-      <span className="text-sm font-medium text-foreground text-right">{value || 'Not provided'}</span>
+      <span className="text-sm font-medium text-foreground text-right">{value || t.notProvided}</span>
     </div>
   );
 
@@ -47,59 +114,53 @@ const ReviewStep = ({ formData, onBack, onSubmit }) => {
           <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10">
             <Icon name="CheckCircle2" size={20} color="var(--color-primary)" />
           </div>
-          <h2 className="text-2xl font-headline text-foreground">Review Your RSVP</h2>
+          <h2 className="text-2xl font-headline text-foreground">{t.title}</h2>
         </div>
 
         <p className="text-muted-foreground mb-6">
-          Please review your information before submitting. You can go back to make any changes.
+          {t.description}
         </p>
 
         <div className="space-y-4">
-          <InfoSection icon="User" title="Guest Information">
-            <InfoRow label="Name" value={`${formData?.firstName} ${formData?.lastName}`} />
-            <InfoRow label="Email" value={formData?.email} />
-            <InfoRow label="Phone" value={formData?.phone} />
-            <InfoRow label="Attendance" value={formData?.attendance === 'yes' ? 'Joyfully Accept' : 'Regretfully Decline'} />
-            <InfoRow label="Language" value={formData?.language === 'en' ? 'English' : 'Español'} />
+          <InfoSection icon="User" title={t.guestInfo}>
+            <InfoRow label={t.name} value={`${formData?.firstName} ${formData?.lastName}`} />
+            <InfoRow label={t.email} value={formData?.email} />
+            <InfoRow label={t.phone} value={formData?.phone} />
+            <InfoRow label={t.attendance} value={formData?.attendance === 'yes' ? t.attendanceYes : t.attendanceNo} />
+            <InfoRow label={t.language} value={formData?.language === 'en' ? 'English' : 'Español'} />
           </InfoSection>
 
           {formData?.hasPlusOne && (
-            <InfoSection icon="Users" title="Plus One">
-              <InfoRow label="Name" value={`${formData?.plusOneFirstName} ${formData?.plusOneLastName}`} />
+            <InfoSection icon="Users" title={t.plusOne}>
+              <InfoRow label={t.name} value={`${formData?.plusOneFirstName} ${formData?.plusOneLastName}`} />
             </InfoSection>
           )}
 
-          {formData?.attendance === 'yes' && (
-            <InfoSection icon="UtensilsCrossed" title="Meal Preferences">
-              <InfoRow label="Your Meal" value={mealLabels?.[formData?.mealPreference]} />
-              {formData?.hasPlusOne && (
-                <InfoRow label="Plus One Meal" value={mealLabels?.[formData?.plusOneMealPreference]} />
-              )}
-              {formData?.dietaryRestrictions && (
-                <InfoRow label="Dietary Restrictions" value={formData?.dietaryRestrictions} />
-              )}
+          {formData?.attendance === 'yes' && formData?.dietaryRestrictions && (
+            <InfoSection icon="UtensilsCrossed" title={t.dietaryRestrictions}>
+              <InfoRow label={t.dietaryRestrictions} value={formData?.dietaryRestrictions} />
             </InfoSection>
           )}
 
           {(formData?.needsWheelchairAccess || formData?.needsHearingAssistance || formData?.needsVisualAssistance || formData?.needsTransportation || formData?.needsAccommodation || formData?.specialNotes) && (
-            <InfoSection icon="Settings" title="Special Requirements">
+            <InfoSection icon="Settings" title={t.specialRequirements}>
               {formData?.needsWheelchairAccess && (
-                <InfoRow label="Wheelchair Access" value="Required" />
+                <InfoRow label={t.wheelchairAccess} value={t.required} />
               )}
               {formData?.needsHearingAssistance && (
-                <InfoRow label="Hearing Assistance" value="Required" />
+                <InfoRow label={t.hearingAssistance} value={t.required} />
               )}
               {formData?.needsVisualAssistance && (
-                <InfoRow label="Visual Assistance" value="Required" />
+                <InfoRow label={t.visualAssistance} value={t.required} />
               )}
               {formData?.needsTransportation && (
-                <InfoRow label="Transportation" value="Assistance needed" />
+                <InfoRow label={t.transportation} value={t.assistanceNeeded} />
               )}
               {formData?.needsAccommodation && (
-                <InfoRow label="Accommodation" value="Recommendations needed" />
+                <InfoRow label={t.accommodation} value={t.recommendationsNeeded} />
               )}
               {formData?.specialNotes && (
-                <InfoRow label="Additional Notes" value={formData?.specialNotes} />
+                <InfoRow label={t.additionalNotes} value={formData?.specialNotes} />
               )}
             </InfoSection>
           )}
@@ -115,7 +176,7 @@ const ReviewStep = ({ formData, onBack, onSubmit }) => {
           onClick={onBack}
           disabled={isSubmitting}
         >
-          Back
+          {t.back}
         </Button>
 
         <Button
@@ -127,7 +188,7 @@ const ReviewStep = ({ formData, onBack, onSubmit }) => {
           onClick={handleSubmit}
           loading={isSubmitting}
         >
-          {isSubmitting ? 'Submitting...' : 'Submit RSVP'}
+          {isSubmitting ? t.submitting : t.submit}
         </Button>
       </div>
     </div>

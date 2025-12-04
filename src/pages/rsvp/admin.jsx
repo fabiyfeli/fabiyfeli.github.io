@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import Icon from '../../components/AppIcon';
@@ -9,11 +9,15 @@ import {
   setAuthSession, 
   isAuthenticated,
   exportRSVPs,
-  clearAllRSVPs
+  clearAllRSVPs,
+  toggleRSVPApproval,
+  deleteRSVP,
+  importRSVPsFromCSV
 } from '../../utils/rsvpStorage';
 
 const RSVPAdmin = () => {
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
   const [isAuth, setIsAuth] = useState(false);
   const [password, setPassword] = useState('');
   const [rsvps, setRsvps] = useState([]);
@@ -50,9 +54,62 @@ const RSVPAdmin = () => {
     exportRSVPs();
   };
 
+  const handleImport = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.endsWith('.csv')) {
+      alert('Por favor selecciona un archivo CSV válido');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const csvContent = e.target?.result;
+      const result = importRSVPsFromCSV(csvContent);
+      
+      if (result.success) {
+        const messages = [];
+        if (result.updated > 0) messages.push(`${result.updated} actualizados`);
+        if (result.added > 0) messages.push(`${result.added} nuevos`);
+        alert(`✓ Importación exitosa: ${messages.join(', ')}`);
+        loadData();
+      } else {
+        alert(`✗ Error al importar: ${result.error}`);
+      }
+      
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    };
+    
+    reader.onerror = () => {
+      alert('Error al leer el archivo');
+    };
+    
+    reader.readAsText(file);
+  };
+
   const handleClearAll = () => {
     if (window.confirm('¿Estás seguro de que quieres eliminar todas las confirmaciones? Esta acción no se puede deshacer.')) {
       clearAllRSVPs();
+      loadData();
+    }
+  };
+
+  const handleToggleApproval = (rsvpId) => {
+    toggleRSVPApproval(rsvpId);
+    loadData();
+  };
+
+  const handleDelete = (rsvpId, guestName) => {
+    if (window.confirm(`¿Estás seguro de que quieres eliminar la confirmación de ${guestName}?`)) {
+      deleteRSVP(rsvpId);
       loadData();
     }
   };
@@ -61,7 +118,9 @@ const RSVPAdmin = () => {
     const matchesFilter = 
       filter === 'all' || 
       (filter === 'attending' && rsvp.attendance === 'yes') ||
-      (filter === 'notAttending' && rsvp.attendance === 'no');
+      (filter === 'notAttending' && rsvp.attendance === 'no') ||
+      (filter === 'pending' && !rsvp.approved) ||
+      (filter === 'approved' && rsvp.approved);
     
     const matchesSearch = 
       searchTerm === '' ||
@@ -130,7 +189,7 @@ const RSVPAdmin = () => {
 
             {/* Stats Cards */}
             {stats && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
                 <div className="bg-card rounded-xl p-6 border border-border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-muted-foreground text-sm">Total Respuestas</span>
@@ -140,17 +199,25 @@ const RSVPAdmin = () => {
                 </div>
                 <div className="bg-card rounded-xl p-6 border border-border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted-foreground text-sm">Confirman Asistencia</span>
-                    <Icon name="Check" className="w-5 h-5 text-green-600" />
+                    <span className="text-muted-foreground text-sm">Pendientes</span>
+                    <Icon name="Clock" className="w-5 h-5 text-orange-600" />
                   </div>
-                  <div className="text-3xl font-bold text-green-600">{stats.attending}</div>
+                  <div className="text-3xl font-bold text-orange-600">{stats.pending}</div>
                 </div>
                 <div className="bg-card rounded-xl p-6 border border-border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted-foreground text-sm">No Asisten</span>
-                    <Icon name="X" className="w-5 h-5 text-red-600" />
+                    <span className="text-muted-foreground text-sm">Aprobados</span>
+                    <Icon name="CheckCircle2" className="w-5 h-5 text-blue-600" />
                   </div>
-                  <div className="text-3xl font-bold text-red-600">{stats.notAttending}</div>
+                  <div className="text-3xl font-bold text-blue-600">{stats.approved}</div>
+                </div>
+                <div className="bg-card rounded-xl p-6 border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-muted-foreground text-sm">Asistirán</span>
+                    <Icon name="Check" className="w-5 h-5 text-green-600" />
+                  </div>
+                  <div className="text-3xl font-bold text-green-600">{stats.attending}</div>
+                  <p className="text-xs text-muted-foreground mt-1">Aprobados</p>
                 </div>
                 <div className="bg-card rounded-xl p-6 border border-border">
                   <div className="flex items-center justify-between mb-2">
@@ -176,7 +243,7 @@ const RSVPAdmin = () => {
                   className="w-full px-4 py-2 rounded-lg border border-border bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap">
                 <button
                   onClick={() => setFilter('all')}
                   className={`px-4 py-2 rounded-lg transition-colors ${
@@ -188,6 +255,26 @@ const RSVPAdmin = () => {
                   Todos
                 </button>
                 <button
+                  onClick={() => setFilter('pending')}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    filter === 'pending'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-border hover:bg-muted'
+                  }`}
+                >
+                  Pendientes
+                </button>
+                <button
+                  onClick={() => setFilter('approved')}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    filter === 'approved'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-border hover:bg-muted'
+                  }`}
+                >
+                  Aprobados
+                </button>
+                <button
                   onClick={() => setFilter('attending')}
                   className={`px-4 py-2 rounded-lg transition-colors ${
                     filter === 'attending'
@@ -195,7 +282,7 @@ const RSVPAdmin = () => {
                       : 'bg-card border border-border hover:bg-muted'
                   }`}
                 >
-                  Asisten
+                  Asistirán
                 </button>
                 <button
                   onClick={() => setFilter('notAttending')}
@@ -205,19 +292,33 @@ const RSVPAdmin = () => {
                       : 'bg-card border border-border hover:bg-muted'
                   }`}
                 >
-                  No Asisten
+                  No Asistirán
                 </button>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex gap-4 mb-6">
+            <div className="flex gap-4 mb-6 flex-wrap">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="hidden"
+              />
+              <button
+                onClick={handleImport}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Icon name="Upload" className="w-4 h-4" />
+                Importar CSV
+              </button>
               <button
                 onClick={handleExport}
                 className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
               >
                 <Icon name="Download" className="w-4 h-4" />
-                Exportar JSON
+                Exportar CSV
               </button>
               <button
                 onClick={handleClearAll}
@@ -241,7 +342,9 @@ const RSVPAdmin = () => {
                 </div>
               ) : (
                 filteredRSVPs.map((rsvp) => (
-                  <div key={rsvp.id} className="bg-card rounded-xl p-6 border border-border">
+                  <div key={rsvp.id} className={`bg-card rounded-xl p-6 border-2 ${
+                    rsvp.approved ? 'border-green-500/30' : 'border-orange-500/30'
+                  }`}>
                     <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                       {/* Main Info */}
                       <div className="flex-1">
@@ -257,9 +360,22 @@ const RSVPAdmin = () => {
                             />
                           </div>
                           <div className="flex-1">
-                            <h3 className="text-xl font-display mb-1">
-                              {rsvp.firstName} {rsvp.lastName}
-                            </h3>
+                            <div className="flex items-center gap-2 mb-1">
+                              <h3 className="text-xl font-display">
+                                {rsvp.firstName} {rsvp.lastName}
+                              </h3>
+                              {rsvp.approved ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                                  <Icon name="CheckCircle2" className="w-3 h-3" />
+                                  Aprobado
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+                                  <Icon name="Clock" className="w-3 h-3" />
+                                  Pendiente
+                                </span>
+                              )}
+                            </div>
                             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Icon name="Mail" className="w-4 h-4" />
@@ -303,35 +419,6 @@ const RSVPAdmin = () => {
                         {/* Details Grid */}
                         {rsvp.attendance === 'yes' && (
                           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pl-16">
-                            {/* Meal Preferences */}
-                            {rsvp.mealPreference && (
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-1">
-                                  Menú Principal:
-                                </p>
-                                <p className="text-sm">
-                                  {rsvp.mealPreference === 'meat' && '🥩 Carne'}
-                                  {rsvp.mealPreference === 'fish' && '🐟 Pescado'}
-                                  {rsvp.mealPreference === 'vegetarian' && '🥗 Vegetariano'}
-                                  {rsvp.mealPreference === 'vegan' && '🌱 Vegano'}
-                                </p>
-                              </div>
-                            )}
-
-                            {rsvp.hasPlusOne && rsvp.plusOneMealPreference && (
-                              <div>
-                                <p className="text-sm font-medium text-muted-foreground mb-1">
-                                  Menú Acompañante:
-                                </p>
-                                <p className="text-sm">
-                                  {rsvp.plusOneMealPreference === 'meat' && '🥩 Carne'}
-                                  {rsvp.plusOneMealPreference === 'fish' && '🐟 Pescado'}
-                                  {rsvp.plusOneMealPreference === 'vegetarian' && '🥗 Vegetariano'}
-                                  {rsvp.plusOneMealPreference === 'vegan' && '🌱 Vegano'}
-                                </p>
-                              </div>
-                            )}
-
                             {/* Dietary Restrictions */}
                             {rsvp.dietaryRestrictions && (
                               <div className="sm:col-span-2">
@@ -407,6 +494,28 @@ const RSVPAdmin = () => {
                             )}
                           </div>
                         )}
+
+                        {/* Action Buttons */}
+                        <div className="flex gap-2 pt-4 border-t border-border mt-4">
+                          <button
+                            onClick={() => handleToggleApproval(rsvp.id)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                              rsvp.approved
+                                ? 'bg-orange-100 text-orange-700 hover:bg-orange-200'
+                                : 'bg-green-100 text-green-700 hover:bg-green-200'
+                            }`}
+                          >
+                            <Icon name={rsvp.approved ? 'X' : 'CheckCircle2'} className="w-4 h-4" />
+                            {rsvp.approved ? 'Desaprobar' : 'Aprobar'}
+                          </button>
+                          <button
+                            onClick={() => handleDelete(rsvp.id, `${rsvp.firstName} ${rsvp.lastName}`)}
+                            className="flex items-center gap-2 px-4 py-2 bg-red-100 text-red-700 hover:bg-red-200 rounded-lg transition-colors"
+                          >
+                            <Icon name="Trash2" className="w-4 h-4" />
+                            Eliminar
+                          </button>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -4,7 +4,6 @@ import Header from '../../components/Header';
 import Icon from '../../components/AppIcon';
 import EventTimeline from './components/EventTimeline';
 import VenueCard from './components/VenueCard';
-import AccommodationCard from './components/AccommodationCard';
 import DressCodeSection from './components/DressCodeSection';
 import TravelGuide from './components/TravelGuide';
 import FAQSection from './components/FAQSection';
@@ -32,8 +31,6 @@ const WeddingDetails = () => {
       timelineSubtitle: "Your guide to the day\'s celebrations",
       venuesTitle: "Venues",
       venuesSubtitle: "Where our celebration takes place",
-      accommodationsTitle: "Accommodations",
-      accommodationsSubtitle: "Comfortable stays for our guests",
       importantNote: "Important Information",
       noteContent: "Please RSVP by December 21, 2025 to help us finalize arrangements. We can't wait to celebrate with you!"
     },
@@ -46,8 +43,6 @@ const WeddingDetails = () => {
       timelineSubtitle: "Tu guía para las celebraciones del día",
       venuesTitle: "Lugares",
       venuesSubtitle: "Donde se lleva a cabo nuestra celebración",
-      accommodationsTitle: "Alojamiento",
-      accommodationsSubtitle: "Estancias cómodas para nuestros invitados",
       importantNote: "Información Importante",
       noteContent: "Por favor confirme su asistencia antes del 21 de diciembre de 2025 para ayudarnos a finalizar los arreglos. ¡No podemos esperar para celebrar con usted!"
     }
@@ -317,28 +312,6 @@ const WeddingDetails = () => {
           <section className="py-16 px-4">
             <div className="max-w-6xl mx-auto">
               <DressCodeSection language={language} />
-            </div>
-          </section>
-
-          <section className="py-16 px-4 bg-muted/30">
-            <div className="max-w-6xl mx-auto">
-              <div className="text-center mb-12">
-                <h2 className="text-4xl font-headline font-bold text-foreground mb-3">
-                  {currentContent?.accommodationsTitle}
-                </h2>
-                <p className="text-lg text-muted-foreground">
-                  {currentContent?.accommodationsSubtitle}
-                </p>
-              </div>
-              <div className="grid md:grid-cols-3 gap-6">
-                {currentAccommodations?.map((accommodation) =>
-                <AccommodationCard
-                  key={accommodation?.id}
-                  accommodation={accommodation}
-                  language={language} />
-
-                )}
-              </div>
             </div>
           </section>
 

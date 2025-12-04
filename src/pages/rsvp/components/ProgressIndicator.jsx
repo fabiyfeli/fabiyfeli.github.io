@@ -2,16 +2,16 @@ import Icon from '../../../components/AppIcon';
 
 const ProgressIndicator = ({ currentStep, totalSteps, language = 'es' }) => {
   const labels = {
-    es: ['Info', 'Acompañante', 'Menú', 'Requisitos', 'Revisar'],
-    en: ['Guest Info', 'Plus One', 'Meals', 'Requirements', 'Review']
+    es: ['Confirmación', /* 'Acompañante', 'Menú', */ 'Requisitos', 'Revisar'],
+    en: ['Confirmation', /* 'Plus One', 'Meals', */ 'Requirements', 'Review']
   };
 
   const steps = [
     { number: 1, label: labels[language][0], icon: 'User' },
-    { number: 2, label: labels[language][1], icon: 'Users' },
-    { number: 3, label: labels[language][2], icon: 'UtensilsCrossed' },
-    { number: 4, label: labels[language][3], icon: 'Settings' },
-    { number: 5, label: labels[language][4], icon: 'CheckCircle2' }
+    // { number: 2, label: labels[language][1], icon: 'Users' }, // Plus One step removed
+    // { number: 2, label: labels[language][1], icon: 'UtensilsCrossed' }, // Meal Preferences step removed
+    { number: 2, label: labels[language][1], icon: 'Settings' },
+    { number: 3, label: labels[language][2], icon: 'CheckCircle2' }
   ];
 
   return (
