@@ -62,28 +62,51 @@ export const saveRSVPs = (rsvps) => {
   }
 };
 
-// Add a new RSVP
+// Add a new RSVP or update existing one if email matches
 export const addRSVP = (rsvpData) => {
   const rsvps = loadRSVPs();
-  // Generate unique ID using timestamp + random number to avoid collisions
-  const generateUniqueId = () => {
-    let newId;
-    const existingIds = new Set(rsvps.map(r => r.id));
-    do {
-      newId = Date.now() + Math.floor(Math.random() * 10000);
-    } while (existingIds.has(newId));
-    return newId;
-  };
   
-  const rsvpWithMetadata = {
-    ...rsvpData,
-    id: generateUniqueId(),
-    submittedAt: new Date(),
-    approved: false // New RSVPs need approval
-  };
-  const updatedRSVPs = [rsvpWithMetadata, ...rsvps];
-  saveRSVPs(updatedRSVPs);
-  return rsvpWithMetadata;
+  // Check if an RSVP with the same email already exists
+  const existingIndex = rsvps.findIndex(r => 
+    r.email.toLowerCase() === rsvpData.email.toLowerCase()
+  );
+  
+  if (existingIndex !== -1) {
+    // Update existing RSVP
+    const existingRSVP = rsvps[existingIndex];
+    const updatedRSVP = {
+      ...existingRSVP,
+      ...rsvpData,
+      id: existingRSVP.id, // Keep the original ID
+      submittedAt: new Date(), // Update submission time
+      // Keep approved status if it was already approved
+      approved: existingRSVP.approved || false
+    };
+    rsvps[existingIndex] = updatedRSVP;
+    saveRSVPs(rsvps);
+    return updatedRSVP;
+  } else {
+    // Generate unique ID using timestamp + random number to avoid collisions
+    const generateUniqueId = () => {
+      let newId;
+      const existingIds = new Set(rsvps.map(r => r.id));
+      do {
+        newId = Date.now() + Math.floor(Math.random() * 10000);
+      } while (existingIds.has(newId));
+      return newId;
+    };
+    
+    // Add new RSVP
+    const rsvpWithMetadata = {
+      ...rsvpData,
+      id: generateUniqueId(),
+      submittedAt: new Date(),
+      approved: false // New RSVPs need approval
+    };
+    const updatedRSVPs = [rsvpWithMetadata, ...rsvps];
+    saveRSVPs(updatedRSVPs);
+    return rsvpWithMetadata;
+  }
 };
 
 // Get RSVP statistics
