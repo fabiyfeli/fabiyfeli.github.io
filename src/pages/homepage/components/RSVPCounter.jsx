@@ -44,14 +44,16 @@ const RSVPCounter = ({ language }) => {
       confirmed: "Confirmed",
       pending: "Pending",
       total: "Total Invited",
-      message: "Join the celebration! Your presence would mean the world to us."
+      message: "Join the celebration! Your presence would mean the world to us.",
+      percentageMessage: "of guests have confirmed their attendance"
     },
     es: {
       title: "Entusiasmo de los Invitados",
       confirmed: "Confirmados",
       pending: "Pendientes",
       total: "Total Invitados",
-      message: "¡Únete a la celebración! Tu presencia significaría el mundo para nosotros."
+      message: "¡Únete a la celebración! Tu presencia significaría el mundo para nosotros.",
+      percentageMessage: "de los invitados han confirmado su asistencia"
     }
   };
 
@@ -117,7 +119,7 @@ const RSVPCounter = ({ language }) => {
             ></div>
           </div>
           <p className="text-center text-muted-foreground text-sm mt-3">
-            {percentage}% of guests have confirmed their attendance
+            {percentage}% {text?.percentageMessage}
           </p>
         </div>
       </div>

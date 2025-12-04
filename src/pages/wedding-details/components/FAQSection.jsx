@@ -56,6 +56,10 @@ const FAQSection = ({ language }) => {
         {
           question: "Where can I stay?",
           answer: "We recommend hotels like The Singular Santiago, W Santiago, or Holiday Inn Express Santiago. Check our Accommodations section for more details and group codes."
+        },
+        {
+          question: "What about gifts?",
+          answer: "Your presence at our wedding is the greatest gift we could ask for! However, if you wish to honor us with a gift, monetary contributions are welcome and greatly appreciated."
         }
       ]
     },
@@ -110,6 +114,10 @@ const FAQSection = ({ language }) => {
         {
           question: "¿Dónde puedo alojarme?",
           answer: "Recomendamos hoteles como The Singular Santiago, W Santiago o Holiday Inn Express Santiago. Consulta nuestra sección de Alojamiento para más detalles y códigos de grupo."
+        },
+        {
+          question: "¿Qué pasa con los regalos?",
+          answer: "¡Tu presencia en nuestra boda es el mejor regalo que podríamos pedir! Sin embargo, si deseas honrarnos con un regalo, las contribuciones monetarias son bienvenidas y muy apreciadas."
         }
       ]
     }

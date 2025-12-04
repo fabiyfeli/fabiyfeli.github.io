@@ -223,6 +223,11 @@ export const importRSVPsFromCSV = (csvContent) => {
       throw new Error('El archivo CSV está vacío o no tiene datos');
     }
 
+    // Detect delimiter (comma or semicolon)
+    const firstLine = lines[0];
+    const delimiter = firstLine.includes(';') ? ';' : ',';
+    console.log('CSV delimiter detected:', delimiter);
+
     // Skip header line
     const dataLines = lines.slice(1);
     const newRSVPs = [];
@@ -244,7 +249,7 @@ export const importRSVPsFromCSV = (csvContent) => {
             } else {
               insideQuotes = !insideQuotes;
             }
-          } else if (char === ',' && !insideQuotes) {
+          } else if (char === delimiter && !insideQuotes) {
             values.push(currentValue.trim());
             currentValue = '';
           } else {
@@ -253,16 +258,19 @@ export const importRSVPsFromCSV = (csvContent) => {
         }
         values.push(currentValue.trim()); // Push last value
 
+        console.log(`Línea ${index + 2}: ${values.length} columnas`, values);
+
         if (values.length < 16) {
-          console.warn(`Línea ${index + 2} tiene columnas insuficientes, saltando...`);
+          console.warn(`Línea ${index + 2} tiene ${values.length} columnas (esperadas: 16), saltando...`);
           return;
         }
 
-        // Check if ID exists (first column)
-        const existingId = values[0] ? parseInt(values[0]) : null;
+        // Check if ID exists (first column) - must be valid number
+        const csvId = values[0] ? parseInt(values[0]) : null;
+        const hasValidId = csvId && !isNaN(csvId) && csvId > 0;
 
         const rsvp = {
-          id: existingId || (Date.now() + index), // Use existing ID or generate new one
+          id: hasValidId ? csvId : null, // Keep valid ID or mark as null for new records
           firstName: values[1] || '',
           lastName: values[2] || '',
           email: values[3] || '',
@@ -280,7 +288,8 @@ export const importRSVPsFromCSV = (csvContent) => {
           submittedAt: new Date(),
           hasPlusOne: false,
           plusOneFirstName: '',
-          plusOneLastName: ''
+          plusOneLastName: '',
+          _hasValidId: hasValidId // Track if this came with a valid ID
         };
 
         newRSVPs.push(rsvp);
@@ -295,28 +304,44 @@ export const importRSVPsFromCSV = (csvContent) => {
 
     // Replace existing RSVPs with matching IDs, add new ones
     const existingRSVPs = loadRSVPs();
-    const importedIds = new Set(newRSVPs.map(r => r.id));
     
-    // Update existing records that have matching IDs in the import
     let updatedCount = 0;
     let addedCount = 0;
     
+    // First, handle records with valid IDs (updates)
+    const recordsWithIds = newRSVPs.filter(r => r._hasValidId);
+    const recordsWithoutIds = newRSVPs.filter(r => !r._hasValidId);
+    
+    console.log(`Records with IDs: ${recordsWithIds.length}, Records without IDs: ${recordsWithoutIds.length}`);
+    
+    // Start with existing RSVPs and update matching ones
     const mergedRSVPs = existingRSVPs.map(existing => {
-      const importedMatch = newRSVPs.find(imported => imported.id === existing.id);
+      const importedMatch = recordsWithIds.find(imported => imported.id === existing.id);
       if (importedMatch) {
         updatedCount++;
-        return importedMatch;
+        // Remove _hasValidId flag before returning
+        const { _hasValidId, ...cleanRecord } = importedMatch;
+        return cleanRecord;
       }
       return existing;
     });
     
-    // Add truly new records (those without matching ID in existing data)
+    // Add records that have IDs but don't match any existing ones
     const existingIds = new Set(existingRSVPs.map(r => r.id));
-    newRSVPs.forEach(imported => {
+    recordsWithIds.forEach(imported => {
       if (!existingIds.has(imported.id)) {
-        mergedRSVPs.push(imported);
+        const { _hasValidId, ...cleanRecord } = imported;
+        mergedRSVPs.push(cleanRecord);
         addedCount++;
       }
+    });
+    
+    // Add all new records (without IDs) with generated IDs
+    recordsWithoutIds.forEach((imported, index) => {
+      const { _hasValidId, ...cleanRecord } = imported;
+      cleanRecord.id = Date.now() + index + Math.floor(Math.random() * 1000);
+      mergedRSVPs.push(cleanRecord);
+      addedCount++;
     });
     
     saveRSVPs(mergedRSVPs);

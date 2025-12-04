@@ -1,11 +1,34 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
+import { loadRSVPs } from '../../../utils/rsvpStorage';
 
 const GuestInfoStep = ({ formData, onUpdate, onNext, onSubmit, language = 'es' }) => {
   const [errors, setErrors] = useState({});
+  const [suggestions, setSuggestions] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [allGuests, setAllGuests] = useState([]);
+  const suggestionsRef = useRef(null);
+
+  useEffect(() => {
+    // Load all existing RSVPs for autocomplete
+    const existingRSVPs = loadRSVPs();
+    setAllGuests(existingRSVPs);
+  }, []);
+
+  useEffect(() => {
+    // Close suggestions when clicking outside
+    const handleClickOutside = (event) => {
+      if (suggestionsRef.current && !suggestionsRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const content = {
     es: {
@@ -120,6 +143,39 @@ const GuestInfoStep = ({ formData, onUpdate, onNext, onSubmit, language = 'es' }
     }
   };
 
+  const handleNameChange = (field, value) => {
+    onUpdate({ [field]: value });
+    
+    // Search for matching guests when typing name
+    if (value.length >= 2) {
+      const searchTerm = value.toLowerCase();
+      const matches = allGuests.filter(guest => {
+        const fullName = `${guest.firstName} ${guest.lastName}`.toLowerCase();
+        return fullName.includes(searchTerm) || 
+               guest.firstName.toLowerCase().includes(searchTerm) ||
+               guest.lastName.toLowerCase().includes(searchTerm);
+      }).slice(0, 5); // Limit to 5 suggestions
+      
+      setSuggestions(matches);
+      setShowSuggestions(matches.length > 0);
+    } else {
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  const handleSelectSuggestion = (guest) => {
+    onUpdate({
+      firstName: guest.firstName,
+      lastName: guest.lastName,
+      email: guest.email,
+      phone: guest.phone,
+      language: guest.language || formData.language
+    });
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
   return (
     <form onSubmit={handleContinue} className="space-y-6">
       <div className="bg-card rounded-xl p-6 sm:p-8 border border-border">
@@ -131,15 +187,47 @@ const GuestInfoStep = ({ formData, onUpdate, onNext, onSubmit, language = 'es' }
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-          <Input
-            label={t.firstName}
-            type="text"
-            placeholder={t.firstNamePlaceholder}
-            value={formData?.firstName || ''}
-            onChange={(e) => onUpdate({ firstName: e?.target?.value })}
-            error={errors?.firstName}
-            required
-          />
+          <div className="relative" ref={suggestionsRef}>
+            <Input
+              label={t.firstName}
+              type="text"
+              placeholder={t.firstNamePlaceholder}
+              value={formData?.firstName || ''}
+              onChange={(e) => handleNameChange('firstName', e?.target?.value)}
+              error={errors?.firstName}
+              required
+            />
+            
+            {showSuggestions && suggestions.length > 0 && (
+              <div className="absolute z-10 w-full mt-1 bg-card border border-border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                <div className="p-2">
+                  <p className="text-xs text-muted-foreground mb-2 px-2">
+                    {language === 'es' ? 'Sugerencias basadas en registros existentes:' : 'Suggestions based on existing records:'}
+                  </p>
+                  {suggestions.map((guest, index) => (
+                    <button
+                      key={index}
+                      type="button"
+                      onClick={() => handleSelectSuggestion(guest)}
+                      className="w-full text-left px-3 py-2 rounded-md hover:bg-primary/10 transition-colors duration-200"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon name="User" size={14} color="var(--color-primary)" />
+                        <div>
+                          <p className="text-sm font-medium text-foreground">
+                            {guest.firstName} {guest.lastName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {guest.email}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
 
           <Input
             label={t.lastName}

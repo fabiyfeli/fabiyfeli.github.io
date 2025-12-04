@@ -11,6 +11,7 @@ import {
   exportRSVPs,
   clearAllRSVPs,
   toggleRSVPApproval,
+  updateRSVP,
   deleteRSVP,
   importRSVPsFromCSV
 } from '../../utils/rsvpStorage';
@@ -24,6 +25,8 @@ const RSVPAdmin = () => {
   const [stats, setStats] = useState(null);
   const [filter, setFilter] = useState('all'); // all, attending, notAttending
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingField, setEditingField] = useState(null); // { rsvpId, field }
+  const [editValue, setEditValue] = useState('');
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -69,17 +72,26 @@ const RSVPAdmin = () => {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const csvContent = e.target?.result;
-      const result = importRSVPsFromCSV(csvContent);
-      
-      if (result.success) {
-        const messages = [];
-        if (result.updated > 0) messages.push(`${result.updated} actualizados`);
-        if (result.added > 0) messages.push(`${result.added} nuevos`);
-        alert(`✓ Importación exitosa: ${messages.join(', ')}`);
-        loadData();
-      } else {
-        alert(`✗ Error al importar: ${result.error}`);
+      try {
+        const csvContent = e.target?.result;
+        console.log('CSV Content loaded, length:', csvContent?.length);
+        console.log('First 200 chars:', csvContent?.substring(0, 200));
+        
+        const result = importRSVPsFromCSV(csvContent);
+        console.log('Import result:', result);
+        
+        if (result.success) {
+          const messages = [];
+          if (result.updated > 0) messages.push(`${result.updated} actualizados`);
+          if (result.added > 0) messages.push(`${result.added} nuevos`);
+          alert(`✓ Importación exitosa: ${messages.join(', ')}`);
+          loadData();
+        } else {
+          alert(`✗ Error al importar: ${result.error}`);
+        }
+      } catch (error) {
+        console.error('Error in handleFileChange:', error);
+        alert(`✗ Error al procesar el archivo: ${error.message}`);
       }
       
       // Reset file input
@@ -88,11 +100,13 @@ const RSVPAdmin = () => {
       }
     };
     
-    reader.onerror = () => {
+    reader.onerror = (error) => {
+      console.error('FileReader error:', error);
       alert('Error al leer el archivo');
     };
     
-    reader.readAsText(file);
+    // Try reading with UTF-8 encoding first
+    reader.readAsText(file, 'UTF-8');
   };
 
   const handleClearAll = () => {
@@ -105,6 +119,34 @@ const RSVPAdmin = () => {
   const handleToggleApproval = (rsvpId) => {
     toggleRSVPApproval(rsvpId);
     loadData();
+  };
+
+  const handleToggleAttendance = (rsvpId) => {
+    const rsvp = rsvps.find(r => r.id === rsvpId);
+    if (rsvp) {
+      const newAttendance = rsvp.attendance === 'yes' ? 'no' : 'yes';
+      updateRSVP(rsvpId, { attendance: newAttendance });
+      loadData();
+    }
+  };
+
+  const startEditing = (rsvpId, field, currentValue) => {
+    setEditingField({ rsvpId, field });
+    setEditValue(currentValue);
+  };
+
+  const cancelEditing = () => {
+    setEditingField(null);
+    setEditValue('');
+  };
+
+  const saveEdit = () => {
+    if (editingField) {
+      updateRSVP(editingField.rsvpId, { [editingField.field]: editValue });
+      setEditingField(null);
+      setEditValue('');
+      loadData();
+    }
   };
 
   const handleDelete = (rsvpId, guestName) => {
@@ -349,21 +391,66 @@ const RSVPAdmin = () => {
                       {/* Main Info */}
                       <div className="flex-1">
                         <div className="flex items-start gap-4 mb-4">
-                          <div className={`flex items-center justify-center w-12 h-12 rounded-full ${
-                            rsvp.attendance === 'yes' 
-                              ? 'bg-green-100 text-green-600' 
-                              : 'bg-red-100 text-red-600'
-                          }`}>
+                          <button
+                            onClick={() => handleToggleAttendance(rsvp.id)}
+                            className={`flex items-center justify-center w-12 h-12 rounded-full cursor-pointer transition-all hover:scale-110 ${
+                              rsvp.attendance === 'yes' 
+                                ? 'bg-green-100 text-green-600 hover:bg-green-200' 
+                                : 'bg-red-100 text-red-600 hover:bg-red-200'
+                            }`}
+                            title={rsvp.attendance === 'yes' ? 'Clic para marcar como NO asistirá' : 'Clic para marcar como SÍ asistirá'}
+                          >
                             <Icon 
                               name={rsvp.attendance === 'yes' ? 'Check' : 'X'} 
                               className="w-6 h-6" 
                             />
-                          </div>
+                          </button>
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-1">
-                              <h3 className="text-xl font-display">
-                                {rsvp.firstName} {rsvp.lastName}
-                              </h3>
+                              {editingField?.rsvpId === rsvp.id && (editingField?.field === 'firstName' || editingField?.field === 'lastName') ? (
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    type="text"
+                                    value={editValue}
+                                    onChange={(e) => setEditValue(e.target.value)}
+                                    className="px-2 py-1 border border-border rounded text-foreground bg-background"
+                                    placeholder={editingField?.field === 'firstName' ? 'Nombre' : 'Apellido'}
+                                    autoFocus
+                                  />
+                                  <button
+                                    onClick={saveEdit}
+                                    className="p-1 bg-green-100 text-green-700 hover:bg-green-200 rounded"
+                                    title="Guardar"
+                                  >
+                                    <Icon name="Check" className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    onClick={cancelEditing}
+                                    className="p-1 bg-red-100 text-red-700 hover:bg-red-200 rounded"
+                                    title="Cancelar"
+                                  >
+                                    <Icon name="X" className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <h3 className="text-xl font-display">
+                                  <button
+                                    onClick={() => startEditing(rsvp.id, 'firstName', rsvp.firstName)}
+                                    className="hover:text-primary cursor-pointer"
+                                    title="Clic para editar nombre"
+                                  >
+                                    {rsvp.firstName}
+                                  </button>
+                                  {' '}
+                                  <button
+                                    onClick={() => startEditing(rsvp.id, 'lastName', rsvp.lastName)}
+                                    className="hover:text-primary cursor-pointer"
+                                    title="Clic para editar apellido"
+                                  >
+                                    {rsvp.lastName}
+                                  </button>
+                                </h3>
+                              )}
                               {rsvp.approved ? (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                                   <Icon name="CheckCircle2" className="w-3 h-3" />
@@ -379,7 +466,39 @@ const RSVPAdmin = () => {
                             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">
                                 <Icon name="Mail" className="w-4 h-4" />
-                                {rsvp.email}
+                                {editingField?.rsvpId === rsvp.id && editingField?.field === 'email' ? (
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="email"
+                                      value={editValue}
+                                      onChange={(e) => setEditValue(e.target.value)}
+                                      className="px-2 py-1 border border-border rounded text-foreground bg-background"
+                                      autoFocus
+                                    />
+                                    <button
+                                      onClick={saveEdit}
+                                      className="p-1 bg-green-100 text-green-700 hover:bg-green-200 rounded"
+                                      title="Guardar"
+                                    >
+                                      <Icon name="Check" className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={cancelEditing}
+                                      className="p-1 bg-red-100 text-red-700 hover:bg-red-200 rounded"
+                                      title="Cancelar"
+                                    >
+                                      <Icon name="X" className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => startEditing(rsvp.id, 'email', rsvp.email)}
+                                    className="hover:text-primary cursor-pointer"
+                                    title="Clic para editar"
+                                  >
+                                    {rsvp.email}
+                                  </button>
+                                )}
                               </span>
                               {rsvp.phone && (
                                 <span className="flex items-center gap-1">
@@ -389,7 +508,41 @@ const RSVPAdmin = () => {
                               )}
                               <span className="flex items-center gap-1">
                                 <Icon name="Globe" className="w-4 h-4" />
-                                {rsvp.language === 'es' ? 'Español' : 'English'}
+                                {editingField?.rsvpId === rsvp.id && editingField?.field === 'language' ? (
+                                  <div className="flex items-center gap-2">
+                                    <select
+                                      value={editValue}
+                                      onChange={(e) => setEditValue(e.target.value)}
+                                      className="px-2 py-1 border border-border rounded text-foreground bg-background"
+                                      autoFocus
+                                    >
+                                      <option value="es">Español</option>
+                                      <option value="en">English</option>
+                                    </select>
+                                    <button
+                                      onClick={saveEdit}
+                                      className="p-1 bg-green-100 text-green-700 hover:bg-green-200 rounded"
+                                      title="Guardar"
+                                    >
+                                      <Icon name="Check" className="w-3 h-3" />
+                                    </button>
+                                    <button
+                                      onClick={cancelEditing}
+                                      className="p-1 bg-red-100 text-red-700 hover:bg-red-200 rounded"
+                                      title="Cancelar"
+                                    >
+                                      <Icon name="X" className="w-3 h-3" />
+                                    </button>
+                                  </div>
+                                ) : (
+                                  <button
+                                    onClick={() => startEditing(rsvp.id, 'language', rsvp.language)}
+                                    className="hover:text-primary cursor-pointer"
+                                    title="Clic para editar"
+                                  >
+                                    {rsvp.language === 'es' ? 'Español' : 'English'}
+                                  </button>
+                                )}
                               </span>
                             </div>
                             <p className="text-xs text-muted-foreground mt-2">

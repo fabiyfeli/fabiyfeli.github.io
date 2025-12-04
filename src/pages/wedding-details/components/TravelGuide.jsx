@@ -40,21 +40,21 @@ const TravelGuide = ({ language }) => {
         name: "Cerro San Cristóbal",
         description: "Iconic hill with panoramic city views and Virgin Mary statue",
         distance: "20 km",
-        image: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62",
+        image: "./assets/images/cerro-san-cristobal.png",
         imageAlt: "Cerro San Cristóbal overlooking Santiago with white Virgin Mary statue and Andes mountains in background"
       },
       {
         name: "Plaza de Armas",
         description: "Historic main square with colonial architecture and museums",
         distance: "22 km",
-        image: "https://images.unsplash.com/photo-1489171084589-9b5031ebcf9b",
+        image: "./assets/images/plaza-de-armas.png",
         imageAlt: "Plaza de Armas central square with historic cathedral, palm trees, and people enjoying the plaza"
       },
       {
         name: "Barrio Lastarria",
         description: "Bohemian neighborhood with art, restaurants, and nightlife",
         distance: "18 km",
-        image: "https://images.unsplash.com/photo-1518638150340-f706e86654de",
+        image: "./assets/images/barrio-lastarria-2.png",
         imageAlt: "Colorful Barrio Lastarria streets with murals, cafes, and vibrant cultural atmosphere"
       }],
 
@@ -116,20 +116,21 @@ const TravelGuide = ({ language }) => {
         name: "Cerro San Cristóbal",
         description: "Icónico cerro con vistas panorámicas y estatua de la Virgen María",
         distance: "20 km",
-        image: "https://images.unsplash.com/photo-1544644181-1484b3fdfc62",
+        image: "./assets/images/cerro-san-cristobal.png",
         imageAlt: "Cerro San Cristóbal con vista de Santiago, estatua blanca de la Virgen María y montañas de los Andes al fondo"
       },
       {
         name: "Plaza de Armas",
         description: "Plaza principal histórica con arquitectura colonial y museos",
         distance: "22 km",
-        image: "https://images.unsplash.com/photo-1489171084589-9b5031ebcf9b",
+        image: "./assets/images/plaza_armas.png",
         imageAlt: "Plaza de Armas central con catedral histórica, palmeras y personas disfrutando de la plaza"
       },
       {
         name: "Barrio Lastarria",
         description: "Barrio bohemio con arte, restaurantes y vida nocturna",
         distance: "18 km",
+        image: "./assets/images/barrio-lastarria-2.png",
         imageAlt: "Calles coloridas de Barrio Lastarria con murales, cafés y vibrante atmósfera cultural"
       }],
 
