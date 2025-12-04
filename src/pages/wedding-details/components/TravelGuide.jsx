@@ -123,7 +123,7 @@ const TravelGuide = ({ language }) => {
         name: "Plaza de Armas",
         description: "Plaza principal histórica con arquitectura colonial y museos",
         distance: "22 km",
-        image: "./assets/images/plaza_armas.png",
+        image: "./assets/images/plaza-de-armas.png",
         imageAlt: "Plaza de Armas central con catedral histórica, palmeras y personas disfrutando de la plaza"
       },
       {
