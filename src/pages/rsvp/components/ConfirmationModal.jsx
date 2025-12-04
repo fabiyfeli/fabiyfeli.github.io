@@ -61,7 +61,7 @@ const ConfirmationModal = ({ formData, onClose, language = 'es' }) => {
                   {t.emailSentTitle}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {t.emailSentDesc(<span className="font-medium">{formData?.email}</span>)}
+                  {t.emailSentDesc(formData?.email)}
                 </p>
               </div>
             </div>
