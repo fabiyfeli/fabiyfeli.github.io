@@ -116,6 +116,29 @@ const loadMessagesFromLocalStorage = () => {
   }
 };
 
+// Load messages with Firebase sync (async version for admin panels)
+export const loadMessagesWithSync = async () => {
+  // Try to load from Firebase first
+  if (isFirebaseConfigured()) {
+    try {
+      const firebaseMessages = await loadMessagesFromFirebase();
+      if (firebaseMessages.length > 0) {
+        console.log('✓ Loaded', firebaseMessages.length, 'messages from Firebase');
+        // Merge with localStorage
+        const localMessages = loadMessagesFromLocalStorage();
+        const merged = mergeMessages(localMessages, firebaseMessages);
+        saveMessages(merged); // Save to localStorage as cache
+        return merged;
+      }
+    } catch (err) {
+      console.warn('Failed to load from Firebase, using localStorage:', err);
+    }
+  }
+  
+  // Fallback to localStorage
+  return loadMessagesFromLocalStorage();
+};
+
 // Load messages from localStorage (with Firebase sync in background)
 export const loadMessages = () => {
   // Sync from Firebase in background (non-blocking)

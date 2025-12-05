@@ -3,6 +3,7 @@ import Header from '../../components/Header';
 import Icon from '../../components/AppIcon';
 import {
   loadMessages,
+  loadMessagesWithSync,
   deleteMessage,
   exportMessagesToCSV,
   importMessagesFromCSV,
@@ -35,10 +36,19 @@ const GuestBookAdmin = () => {
     }
   }, []);
 
-  const loadData = () => {
-    const loadedMessages = loadMessages();
-    setMessages(loadedMessages);
-    setStats(getGuestBookStats());
+  const loadData = async () => {
+    try {
+      const loadedMessages = await loadMessagesWithSync();
+      setMessages(loadedMessages);
+      setStats(getGuestBookStats());
+      console.log('✓ Loaded', loadedMessages.length, 'messages from Firebase/localStorage');
+    } catch (error) {
+      console.error('Error loading messages:', error);
+      // Fallback to local data
+      const localMessages = loadMessages();
+      setMessages(localMessages);
+      setStats(getGuestBookStats());
+    }
   };
 
   const handleLogin = (e) => {

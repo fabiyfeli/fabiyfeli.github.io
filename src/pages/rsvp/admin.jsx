@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import Icon from '../../components/AppIcon';
 import { 
-  loadRSVPs, 
+  loadRSVPs,
+  loadRSVPsWithSync,
   getRSVPStats, 
   checkAuth, 
   setAuthSession, 
@@ -29,6 +30,7 @@ const RSVPAdmin = () => {
   const [editValue, setEditValue] = useState('');
   const [showTokenModal, setShowTokenModal] = useState(false);
   const [githubToken, setGithubToken] = useState('');
+  const [isLoadingFirebase, setIsLoadingFirebase] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -42,10 +44,38 @@ const RSVPAdmin = () => {
     }
   }, []);
 
-  const loadData = () => {
-    const loadedRSVPs = loadRSVPs();
-    setRsvps(loadedRSVPs);
-    setStats(getRSVPStats());
+  const loadData = async () => {
+    setIsLoadingFirebase(true);
+    try {
+      const loadedRSVPs = await loadRSVPsWithSync();
+      setRsvps(loadedRSVPs);
+      setStats(getRSVPStats());
+      console.log('✓ Loaded', loadedRSVPs.length, 'RSVPs from Firebase/localStorage');
+    } catch (error) {
+      console.error('Error loading RSVPs:', error);
+      // Fallback to local data
+      const localRSVPs = loadRSVPs();
+      setRsvps(localRSVPs);
+      setStats(getRSVPStats());
+    } finally {
+      setIsLoadingFirebase(false);
+    }
+  };
+
+  const handleRefreshFromFirebase = async () => {
+    setIsLoadingFirebase(true);
+    try {
+      // Force reload from Firebase
+      const loadedRSVPs = await loadRSVPsWithSync();
+      setRsvps(loadedRSVPs);
+      setStats(getRSVPStats());
+      alert(`✓ Recargados ${loadedRSVPs.length} RSVPs desde Firebase`);
+    } catch (error) {
+      console.error('Error refreshing from Firebase:', error);
+      alert('Error al cargar desde Firebase. Ver consola para detalles.');
+    } finally {
+      setIsLoadingFirebase(false);
+    }
   };
 
   const handleLogin = (e) => {
@@ -463,6 +493,14 @@ const RSVPAdmin = () => {
               >
                 <Icon name="Download" className="w-4 h-4" />
                 Exportar CSV
+              </button>
+              <button
+                onClick={handleRefreshFromFirebase}
+                disabled={isLoadingFirebase}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Icon name={isLoadingFirebase ? "Loader2" : "RefreshCw"} className={`w-4 h-4 ${isLoadingFirebase ? 'animate-spin' : ''}`} />
+                {isLoadingFirebase ? 'Cargando...' : 'Recargar Firebase'}
               </button>
               <button
                 onClick={handleSyncToGitHub}

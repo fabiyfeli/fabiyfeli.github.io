@@ -82,6 +82,29 @@ const mergeRSVPs = (localRSVPs, firebaseRSVPs) => {
     });
 };
 
+// Load RSVPs with Firebase sync (async version for admin panels)
+export const loadRSVPsWithSync = async () => {
+  // Try to load from Firebase first
+  if (isFirebaseConfigured()) {
+    try {
+      const firebaseRSVPs = await loadRSVPsFromFirebase();
+      if (firebaseRSVPs.length > 0) {
+        console.log('✓ Loaded', firebaseRSVPs.length, 'RSVPs from Firebase');
+        // Merge with localStorage
+        const localRSVPs = loadRSVPsFromLocalStorage();
+        const merged = mergeRSVPs(localRSVPs, firebaseRSVPs);
+        saveRSVPs(merged); // Save to localStorage as cache
+        return merged;
+      }
+    } catch (err) {
+      console.warn('Failed to load from Firebase, using localStorage:', err);
+    }
+  }
+  
+  // Fallback to localStorage
+  return loadRSVPsFromLocalStorage();
+};
+
 // Load RSVPs from localStorage (with Firebase sync in background)
 export const loadRSVPs = () => {
   // Sync from Firebase in background (non-blocking)
@@ -217,9 +240,10 @@ const saveRSVPToFirebase = async (rsvpData) => {
       });
       return { id: docRef.id, isUpdate: true };
     } else {
-      // Create new
+      // Create new - include the local id so we can match later
       const docRef = await addDoc(collection(db, FIREBASE_COLLECTION), {
         ...rsvpData,
+        id: rsvpData.id, // Store local ID for reference
         email: rsvpData.email.toLowerCase(),
         submittedAt: Timestamp.now(),
         approved: false
