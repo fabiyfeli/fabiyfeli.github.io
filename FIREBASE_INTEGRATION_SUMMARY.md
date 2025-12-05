@@ -183,4 +183,6 @@ Si tienes problemas:
 
 **Estado**: ✅ Implementación Completa  
 **Fecha**: 2024  
+**Dominio**: https://fabiyfeli.cl (DNS personalizado)  
+**Repositorio**: fabiyfeli/fabiyfeli.github.io  
 **Requiere Configuración Manual**: `src/config/firebase.js` y reglas de Firestore

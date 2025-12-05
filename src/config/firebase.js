@@ -1,10 +1,12 @@
-// Firebase Configuration
+// Firebase Configuration for Wedding Website
+// Domain: https://fabiyfeli.cl (Custom DNS)
+// Repository: fabiyfeli/fabiyfeli.github.io
 // These credentials are SAFE to be public - security is handled by Firebase Rules
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
-// TODO: Replace with your Firebase project configuration
+// Firebase project configuration
 // Get these values from: Firebase Console > Project Settings > General > Your apps
 
 const firebaseConfig = {

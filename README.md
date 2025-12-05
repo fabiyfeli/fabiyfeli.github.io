@@ -150,11 +150,12 @@ npm run build
 npm run deploy
 ```
 
-The site will be deployed to: `https://fabiyfeli.github.io`
+The site will be deployed to: `https://fabiyfeli.cl` (custom domain with DNS)
 
 ### Deployment Configuration
 
 - The `homepage` field in `package.json` is set to the GitHub Pages URL
+- Custom domain: `fabiyfeli.cl` (configured via DNS and CNAME)
 - Build output goes to the `build/` directory
 - Includes `_redirects`, `CNAME`, and `404.html` for proper routing
 

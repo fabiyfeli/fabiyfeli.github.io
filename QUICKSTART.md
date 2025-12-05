@@ -122,7 +122,7 @@ git push origin main
 ```
 
 GitHub Pages desplegará automáticamente en:
-https://fabiyfeli.github.io
+https://fabiyfeli.cl (dominio personalizado con DNS)
 
 ## 💡 Tips
 
@@ -154,4 +154,5 @@ Ver documentación completa en:
 
 **Tiempo total de setup**: ~15 minutos  
 **Proyecto**: Wedding Website para Fabi & Feli  
+**Sitio web**: https://fabiyfeli.cl  
 **Fecha de boda**: 31 de Enero, 2026

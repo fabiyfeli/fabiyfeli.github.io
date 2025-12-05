@@ -122,7 +122,7 @@ App Check protege tu base de datos contra tráfico no autorizado:
 2. Haz clic en "Comenzar" o "Get started"
 3. Selecciona tu app web
 4. Proveedor: **reCAPTCHA Enterprise** o **reCAPTCHA v3**
-5. Registra tu dominio: `fabiyfeli.github.io`
+5. Registra tu dominio: `fabiyfeli.cl`
 6. Haz clic en "Guardar" o "Save"
 
 Luego actualiza las reglas de Firestore para requerir App Check:
@@ -217,7 +217,7 @@ Cambios en el admin panel se sincronizan automáticamente a Firebase.
 
 - Asegúrate de que tu dominio esté registrado en Firebase:
   - Settings → General → Your apps → Web app
-  - Authorized domains debe incluir `fabiyfeli.github.io`
+  - Authorized domains debe incluir `fabiyfeli.cl` y `fabiyfeli.github.io`
 
 ## 🚀 Deploy
 
@@ -249,5 +249,6 @@ Tu sitio web ahora usa Firebase/Firestore para almacenamiento persistente. Los d
 ---
 
 **Fecha de boda**: 31 de Enero, 2026  
+**Sitio web**: https://fabiyfeli.cl (dominio personalizado)  
 **Repositorio**: fabiyfeli/fabiyfeli.github.io  
 **Documentación Firebase**: https://firebase.google.com/docs/firestore
