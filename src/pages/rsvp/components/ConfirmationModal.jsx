@@ -45,11 +45,139 @@ const ConfirmationModal = ({ formData, onClose, language = 'es' }) => {
   const t = content[language];
 
   useEffect(() => {
-    document.body.style.overflow = 'hidden';
+    try {
+      if (document.body) {
+        document.body.style.overflow = 'hidden';
+      }
+    } catch (e) {
+      console.error('Error setting body overflow:', e);
+    }
+    
     return () => {
-      document.body.style.overflow = 'unset';
+      try {
+        if (document.body) {
+          document.body.style.overflow = 'unset';
+        }
+      } catch (e) {
+        console.error('Error unsetting body overflow:', e);
+      }
     };
   }, []);
+
+  // Safety check
+  if (!formData) {
+    return null;
+  }
+
+  // Generate and download calendar event (.ics file)
+  const downloadCalendarEvent = () => {
+    const eventDate = new Date('2026-01-31T18:00:00');
+    const endDate = new Date('2026-02-01T02:00:00');
+    
+    const formatDate = (date) => {
+      return date.toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+    };
+
+    const icsContent = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//Fabi & Feli Wedding//EN',
+      'CALSCALE:GREGORIAN',
+      'METHOD:PUBLISH',
+      'BEGIN:VEVENT',
+      `DTSTART:${formatDate(eventDate)}`,
+      `DTEND:${formatDate(endDate)}`,
+      `DTSTAMP:${formatDate(new Date())}`,
+      'SUMMARY:Boda de Fabi & Feli',
+      'DESCRIPTION:Celebración de la boda de Fabi & Feli',
+      'LOCATION:Santiago, Chile',
+      'STATUS:CONFIRMED',
+      'SEQUENCE:0',
+      'BEGIN:VALARM',
+      'TRIGGER:-P1D',
+      'ACTION:DISPLAY',
+      'DESCRIPTION:Recordatorio: Boda de Fabi & Feli mañana',
+      'END:VALARM',
+      'END:VEVENT',
+      'END:VCALENDAR'
+    ].join('\r\n');
+
+    const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = 'fabi-feli-wedding.ics';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  // Generate and download confirmation as text/HTML file
+  const downloadConfirmationPDF = () => {
+    const confirmationText = `
+CONFIRMACIÓN DE ASISTENCIA
+Boda de Fabi & Feli
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+INFORMACIÓN DEL INVITADO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nombre: ${formData.firstName} ${formData.lastName}
+Email: ${formData.email}
+${formData.phone ? `Teléfono: ${formData.phone}` : ''}
+Asistencia: ${formData.attendance === 'yes' ? 'SÍ ASISTIRÉ ✓' : 'NO PODRÉ ASISTIR'}
+
+${formData.hasPlusOne ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ACOMPAÑANTE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Nombre: ${formData.plusOneFirstName} ${formData.plusOneLastName}
+` : ''}
+
+${formData.attendance === 'yes' ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+DETALLES DEL EVENTO
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Fecha: 31 de Enero, 2026
+Hora: 18:00 hrs
+Lugar: Santiago, Chile
+
+${formData.dietaryRestrictions ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RESTRICCIONES ALIMENTARIAS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${formData.dietaryRestrictions}
+` : ''}
+
+${formData.specialNotes ? `
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+NOTAS ESPECIALES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+${formData.specialNotes}
+` : ''}
+` : ''}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Gracias por confirmar tu asistencia.
+¡No podemos esperar a celebrar contigo!
+
+Fabi & Feli
+www.fabiyfeli.cl
+    `.trim();
+
+    const blob = new Blob([confirmationText], { type: 'text/plain;charset=utf-8' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `confirmacion-${formData.firstName}-${formData.lastName}.txt`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm animate-in fade-in duration-200">
@@ -60,42 +188,56 @@ const ConfirmationModal = ({ formData, onClose, language = 'es' }) => {
           </div>
 
           <h2 className="text-2xl sm:text-3xl font-headline text-center text-foreground mb-2">
-            {t.title}
+            {t?.title || 'Confirmed'}
           </h2>
 
           <p className="text-center text-muted-foreground mb-6">
             {formData?.attendance === 'yes'
-              ? t.messageAttending(formData?.firstName)
-              : t.messageNotAttending(formData?.firstName)}
+              ? t?.messageAttending(formData?.firstName || 'Guest')
+              : t?.messageNotAttending(formData?.firstName || 'Guest')}
           </p>
 
-          <div className="bg-background rounded-lg p-4 mb-6">
-            <div className="flex items-start gap-3">
-              <Icon name="Mail" size={20} color="var(--color-primary)" className="mt-0.5" />
-              <div>
-                <p className="text-sm font-medium text-foreground mb-1">
-                  {t.emailSentTitle}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {t.emailSentDesc(formData?.email)}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {formData?.attendance === 'yes' && !isUpdate && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <Icon name="Calendar" size={20} color="var(--color-primary)" className="mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-foreground mb-1">
-                    {t.calendarTitle}
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    {t.calendarDesc}
-                  </p>
+          {formData?.attendance === 'yes' && (
+            <div className="space-y-3 mb-6">
+              <button
+                onClick={() => downloadCalendarEvent()}
+                className="w-full flex items-center justify-between gap-3 bg-background hover:bg-muted border border-border rounded-lg p-4 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon name="Calendar" size={20} color="var(--color-primary)" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">
+                      {language === 'es' ? 'Agregar al Calendario' : 'Add to Calendar'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'es' ? 'Descarga el evento .ics' : 'Download .ics event'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+                <Icon name="Download" size={20} color="var(--color-muted-foreground)" />
+              </button>
+
+              <button
+                onClick={() => downloadConfirmationPDF()}
+                className="w-full flex items-center justify-between gap-3 bg-background hover:bg-muted border border-border rounded-lg p-4 transition-colors"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                    <Icon name="FileText" size={20} color="var(--color-primary)" />
+                  </div>
+                  <div className="text-left">
+                    <p className="text-sm font-medium text-foreground">
+                      {language === 'es' ? 'Detalles de Confirmación' : 'Confirmation Details'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'es' ? 'Descarga tu confirmación' : 'Download your confirmation'}
+                    </p>
+                  </div>
+                </div>
+                <Icon name="Download" size={20} color="var(--color-muted-foreground)" />
+              </button>
             </div>
           )}
 

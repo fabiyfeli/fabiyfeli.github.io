@@ -7,7 +7,15 @@ import MessageForm from './components/MessageForm';
 import FilterBar from './components/FilterBar';
 import StatsSection from './components/StatsSection';
 import LanguageToggle from './components/LanguageToggle';
-import { loadMessages, addMessage, toggleLike, updateMessage } from '../../utils/guestBookStorage';
+import { 
+  loadMessages, 
+  addMessage, 
+  toggleLike, 
+  updateMessage,
+  addMessageHybrid,
+  loadMessagesFromGitHub,
+  syncWithGitHub
+} from '../../utils/guestBookStorage';
 
 const GuestBook = () => {
   const [currentLanguage, setCurrentLanguage] = useState('es');
@@ -19,6 +27,7 @@ const GuestBook = () => {
     search: ''
   });
   const [showForm, setShowForm] = useState(false);
+  const [syncStatus, setSyncStatus] = useState({ syncing: false, message: '' });
 
   useEffect(() => {
     const savedLanguage = localStorage.getItem('preferredLanguage');
@@ -28,10 +37,30 @@ const GuestBook = () => {
   }, []);
 
   useEffect(() => {
-    // Load messages from localStorage
+    // Load messages from localStorage first (fast)
     const loadedMessages = loadMessages();
     setMessages(loadedMessages);
     setFilteredMessages(loadedMessages);
+    
+    // Try to load from GitHub in background (slower but has all messages)
+    loadMessagesFromGitHub()
+      .then(githubMessages => {
+        if (githubMessages.length > 0) {
+          // Merge with local messages
+          const localIds = new Set(loadedMessages.map(m => m.githubUrl).filter(Boolean));
+          const newFromGitHub = githubMessages.filter(m => !localIds.has(m.githubUrl));
+          
+          if (newFromGitHub.length > 0) {
+            const merged = [...githubMessages, ...loadedMessages.filter(m => !m.githubUrl)];
+            setMessages(merged);
+            setFilteredMessages(merged);
+            console.log(`Loaded ${githubMessages.length} messages from GitHub`);
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Failed to load from GitHub, using local storage only:', error);
+      });
   }, []);
 
   // Removed old mock messages - now using localStorage
@@ -89,7 +118,7 @@ const GuestBook = () => {
     setFilters((prev) => ({ ...prev, search: value }));
   };
 
-  const handleSubmitMessage = (formData) => {
+  const handleSubmitMessage = async (formData) => {
     const newMessageData = {
       name: formData?.name,
       email: formData?.email,
@@ -111,11 +140,32 @@ const GuestBook = () => {
         '',
       message: formData?.message,
       photo: formData?.photo ? URL.createObjectURL(formData?.photo) : null,
-      photoAlt: formData?.photo ? "Guest uploaded photo shared with wedding message" : null
+      photoAlt: formData?.photo ? "Guest uploaded photo shared with wedding message" : null,
+      language: currentLanguage
     };
 
-    // Add message to localStorage
-    const savedMessage = addMessage(newMessageData);
+    // Show syncing status
+    setSyncStatus({ syncing: true, message: 'Guardando mensaje...' });
+
+    // Add message to localStorage + Firebase (immediate)
+    const savedMessage = await addMessage(newMessageData);
+    
+    // Try to sync to GitHub (get token from admin if available)
+    const githubToken = localStorage.getItem('github_token');
+    if (githubToken) {
+      try {
+        await addMessageHybrid(newMessageData, githubToken);
+        setSyncStatus({ syncing: false, message: '✓ Mensaje guardado y sincronizado' });
+        setTimeout(() => setSyncStatus({ syncing: false, message: '' }), 3000);
+      } catch (error) {
+        console.error('Failed to sync to GitHub:', error);
+        setSyncStatus({ syncing: false, message: '✓ Mensaje guardado localmente' });
+        setTimeout(() => setSyncStatus({ syncing: false, message: '' }), 3000);
+      }
+    } else {
+      setSyncStatus({ syncing: false, message: '✓ Mensaje guardado' });
+      setTimeout(() => setSyncStatus({ syncing: false, message: '' }), 2000);
+    }
     
     // Reload messages from storage
     const updatedMessages = loadMessages();

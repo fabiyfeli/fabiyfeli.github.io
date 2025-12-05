@@ -63,14 +63,46 @@ const RSVP = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     try {
-      const result = addRSVP(formData);
-      setFormData(prev => ({ ...prev, isUpdate: result.isUpdate }));
-      setShowConfirmation(true);
+      console.log('Starting RSVP submission...');
+      
+      // Ensure language is set in formData
+      const dataToSubmit = {
+        ...formData,
+        language: formData.language || language
+      };
+      
+      console.log('Data to submit:', dataToSubmit);
+      
+      // Validate required fields
+      if (!dataToSubmit.firstName || !dataToSubmit.lastName || !dataToSubmit.email) {
+        throw new Error('Missing required fields');
+      }
+      
+      const result = await addRSVP(dataToSubmit);
+      console.log('RSVP result:', result);
+      
+      if (result && typeof result === 'object') {
+        setFormData(prev => ({ ...prev, isUpdate: result.isUpdate || false }));
+        
+        // Small delay to ensure state is updated before showing modal
+        setTimeout(() => {
+          setShowConfirmation(true);
+        }, 100);
+      } else {
+        throw new Error('Invalid response from addRSVP');
+      }
     } catch (error) {
       console.error('Error saving RSVP:', error);
-      alert('Hubo un error al guardar tu confirmación. Por favor intenta de nuevo.');
+      console.error('Error details:', error.message, error.stack);
+      
+      // Show more specific error message
+      const errorMessage = language === 'es' 
+        ? `Error al guardar: ${error.message}. Por favor intenta de nuevo o contacta al soporte.`
+        : `Error saving: ${error.message}. Please try again or contact support.`;
+      
+      alert(errorMessage);
     }
   };
 
@@ -223,7 +255,7 @@ const RSVP = () => {
           </div>
         </div>
       </footer>
-      {showConfirmation && (
+      {showConfirmation && formData && (
         <ConfirmationModal
           formData={formData}
           onClose={handleCloseConfirmation}

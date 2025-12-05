@@ -1,21 +1,131 @@
 // RSVP Storage Utilities
+import { db } from '../config/firebase';
+import { 
+  collection, 
+  addDoc, 
+  getDocs, 
+  query, 
+  orderBy, 
+  doc, 
+  updateDoc, 
+  deleteDoc,
+  where,
+  Timestamp 
+} from 'firebase/firestore';
+
 const STORAGE_KEY = 'wedding_rsvp_responses';
 const AUTH_KEY = 'wedding_rsvp_auth';
+const FIREBASE_COLLECTION = 'rsvps';
 
 // Password for accessing RSVP data
 export const RSVP_PASSWORD = 'FabiYFeli2026';
 
-// Load RSVPs from localStorage
+// Check if Firebase is configured
+const isFirebaseConfigured = () => {
+  try {
+    return db && db !== undefined;
+  } catch {
+    return false;
+  }
+};
+
+// Load RSVPs from Firebase
+export const loadRSVPsFromFirebase = async () => {
+  if (!isFirebaseConfigured()) {
+    console.warn('Firebase not configured, using localStorage only');
+    return [];
+  }
+
+  try {
+    const q = query(collection(db, FIREBASE_COLLECTION), orderBy('submittedAt', 'desc'));
+    const querySnapshot = await getDocs(q);
+    
+    const rsvps = [];
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      rsvps.push({
+        ...data,
+        id: data.id || doc.id, // Prefer stored id, fallback to doc id
+        submittedAt: data.submittedAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || null,
+        firebaseId: doc.id // Store Firebase document ID separately
+      });
+    });
+    
+    return rsvps;
+  } catch (error) {
+    console.error('Error loading RSVPs from Firebase:', error);
+    return [];
+  }
+};
+
+// Merge RSVPs from localStorage and Firebase (Firebase is source of truth)
+const mergeRSVPs = (localRSVPs, firebaseRSVPs) => {
+  const merged = new Map();
+  
+  // Add local RSVPs first
+  localRSVPs.forEach(rsvp => {
+    merged.set(rsvp.email.toLowerCase(), rsvp);
+  });
+  
+  // Override with Firebase data (source of truth)
+  firebaseRSVPs.forEach(rsvp => {
+    merged.set(rsvp.email.toLowerCase(), rsvp);
+  });
+  
+  // Convert back to array, sorted by submission date (newest first)
+  return Array.from(merged.values())
+    .sort((a, b) => {
+      const dateA = a.submittedAt instanceof Date ? a.submittedAt : new Date(a.submittedAt);
+      const dateB = b.submittedAt instanceof Date ? b.submittedAt : new Date(b.submittedAt);
+      return dateB - dateA;
+    });
+};
+
+// Load RSVPs from localStorage (with Firebase sync in background)
 export const loadRSVPs = () => {
+  // Sync from Firebase in background (non-blocking)
+  if (isFirebaseConfigured()) {
+    loadRSVPsFromFirebase()
+      .then(firebaseRSVPs => {
+        if (firebaseRSVPs.length > 0) {
+          // Merge with localStorage - use Firebase as source of truth
+          const localRSVPs = loadRSVPsFromLocalStorage();
+          const merged = mergeRSVPs(localRSVPs, firebaseRSVPs);
+          saveRSVPs(merged);
+          console.log('✓ Synced', firebaseRSVPs.length, 'RSVPs from Firebase');
+        }
+      })
+      .catch(err => console.warn('Background Firebase sync failed:', err));
+  }
+  
+  // Return local data immediately (don't block UI)
+  return loadRSVPsFromLocalStorage();
+};
+
+// Internal function to load from localStorage only
+const loadRSVPsFromLocalStorage = () => {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
       const rsvps = JSON.parse(stored);
-      // Convert date strings back to Date objects
-      const rsvpsWithDates = rsvps.map(rsvp => ({
-        ...rsvp,
-        submittedAt: new Date(rsvp.submittedAt)
-      }));
+      // Convert date strings back to Date objects safely
+      const rsvpsWithDates = rsvps.map(rsvp => {
+        try {
+          return {
+            ...rsvp,
+            submittedAt: rsvp.submittedAt ? new Date(rsvp.submittedAt) : new Date(),
+            updatedAt: rsvp.updatedAt ? new Date(rsvp.updatedAt) : null
+          };
+        } catch (e) {
+          console.error('Error parsing date for RSVP:', e);
+          return {
+            ...rsvp,
+            submittedAt: new Date(),
+            updatedAt: null
+          };
+        }
+      });
       
       // Remove duplicates by ID (keep the most recent one)
       const uniqueRsvps = [];
@@ -50,26 +160,88 @@ export const loadRSVPs = () => {
 export const saveRSVPs = (rsvps) => {
   try {
     // Convert Date objects to ISO strings for storage
-    const rsvpsForStorage = rsvps.map(rsvp => ({
-      ...rsvp,
-      submittedAt: rsvp.submittedAt instanceof Date ? rsvp.submittedAt.toISOString() : rsvp.submittedAt
-    }));
+    const rsvpsForStorage = rsvps.map(rsvp => {
+      try {
+        return {
+          ...rsvp,
+          submittedAt: rsvp.submittedAt instanceof Date 
+            ? rsvp.submittedAt.toISOString() 
+            : (rsvp.submittedAt || new Date().toISOString()),
+          updatedAt: rsvp.updatedAt instanceof Date 
+            ? rsvp.updatedAt.toISOString() 
+            : (rsvp.updatedAt || null)
+        };
+      } catch (e) {
+        console.error('Error converting RSVP dates:', e);
+        return {
+          ...rsvp,
+          submittedAt: new Date().toISOString(),
+          updatedAt: null
+        };
+      }
+    });
     localStorage.setItem(STORAGE_KEY, JSON.stringify(rsvpsForStorage));
     return true;
   } catch (error) {
     console.error('Error saving RSVPs:', error);
+    // Try to provide more context
+    if (error.name === 'QuotaExceededError') {
+      alert('Almacenamiento lleno. Por favor contacta al administrador.');
+    }
     return false;
   }
 };
 
-// Add a new RSVP or update existing one if email matches
-export const addRSVP = (rsvpData) => {
+// Save RSVP to Firebase
+const saveRSVPToFirebase = async (rsvpData) => {
+  if (!isFirebaseConfigured()) {
+    return null;
+  }
+
+  try {
+    // Check if RSVP with same email exists
+    const q = query(
+      collection(db, FIREBASE_COLLECTION), 
+      where('email', '==', rsvpData.email.toLowerCase())
+    );
+    const querySnapshot = await getDocs(q);
+    
+    if (!querySnapshot.empty) {
+      // Update existing
+      const docRef = querySnapshot.docs[0].ref;
+      await updateDoc(docRef, {
+        ...rsvpData,
+        updatedAt: Timestamp.now(),
+        approved: false,
+        previouslyApproved: querySnapshot.docs[0].data().approved || false
+      });
+      return { id: docRef.id, isUpdate: true };
+    } else {
+      // Create new
+      const docRef = await addDoc(collection(db, FIREBASE_COLLECTION), {
+        ...rsvpData,
+        email: rsvpData.email.toLowerCase(),
+        submittedAt: Timestamp.now(),
+        approved: false
+      });
+      return { id: docRef.id, isUpdate: false };
+    }
+  } catch (error) {
+    console.error('Error saving to Firebase:', error);
+    return null;
+  }
+};
+
+// Add a new RSVP or update existing one if email matches (Hybrid: localStorage + Firebase)
+export const addRSVP = async (rsvpData) => {
   const rsvps = loadRSVPs();
   
   // Check if an RSVP with the same email already exists
   const existingIndex = rsvps.findIndex(r => 
     r.email.toLowerCase() === rsvpData.email.toLowerCase()
   );
+  
+  let localResult;
   
   if (existingIndex !== -1) {
     // Update existing RSVP
@@ -78,14 +250,14 @@ export const addRSVP = (rsvpData) => {
       ...existingRSVP,
       ...rsvpData,
       id: existingRSVP.id, // Keep the original ID
-      submittedAt: new Date(), // Update submission time
+      submittedAt: existingRSVP.submittedAt, // Keep original submission time
       updatedAt: new Date(), // Track when it was updated
       approved: false, // Reset approval status so admin can review changes
       previouslyApproved: existingRSVP.approved // Track if it was previously approved
     };
     rsvps[existingIndex] = updatedRSVP;
     saveRSVPs(rsvps);
-    return { ...updatedRSVP, isUpdate: true }; // Flag as update
+    localResult = { ...updatedRSVP, isUpdate: true };
   } else {
     // Generate unique ID using timestamp + random number to avoid collisions
     const generateUniqueId = () => {
@@ -106,8 +278,20 @@ export const addRSVP = (rsvpData) => {
     };
     const updatedRSVPs = [rsvpWithMetadata, ...rsvps];
     saveRSVPs(updatedRSVPs);
-    return { ...rsvpWithMetadata, isUpdate: false }; // Flag as new
+    localResult = { ...rsvpWithMetadata, isUpdate: false };
   }
+  
+  // Try to sync to Firebase in background
+  try {
+    const firebaseResult = await saveRSVPToFirebase(rsvpData);
+    if (firebaseResult) {
+      console.log('✓ RSVP synced to Firebase');
+    }
+  } catch (error) {
+    console.warn('Failed to sync to Firebase, saved locally only:', error);
+  }
+  
+  return localResult;
 };
 
 // Get RSVP statistics
@@ -234,9 +418,9 @@ export const exportRSVPs = () => {
   URL.revokeObjectURL(url);
 };
 
-// Toggle RSVP approval status
-export const toggleRSVPApproval = (rsvpId) => {
-  const rsvps = loadRSVPs();
+// Toggle RSVP approval status - Hybrid: localStorage + Firebase
+export const toggleRSVPApproval = async (rsvpId) => {
+  const rsvps = loadRSVPsFromLocalStorage();
   const updatedRSVPs = rsvps.map(rsvp => {
     if (rsvp.id === rsvpId) {
       return { ...rsvp, approved: !rsvp.approved };
@@ -244,11 +428,42 @@ export const toggleRSVPApproval = (rsvpId) => {
     return rsvp;
   });
   saveRSVPs(updatedRSVPs);
+  
+  // Try to sync to Firebase if firebaseId exists
+  const updatedRSVP = updatedRSVPs.find(r => r.id === rsvpId);
+  if (updatedRSVP && updatedRSVP.firebaseId) {
+    try {
+      await updateRSVPInFirebase(updatedRSVP.firebaseId, { approved: updatedRSVP.approved });
+      console.log('✓ Approval status synced to Firebase');
+    } catch (error) {
+      console.warn('Failed to sync approval to Firebase:', error);
+    }
+  }
+  
   return updatedRSVPs;
 };
 
-// Update RSVP data (for manual edits)
-export const updateRSVP = (rsvpId, updates) => {
+// Update RSVP in Firebase by firebaseId
+const updateRSVPInFirebase = async (firebaseId, updates) => {
+  if (!isFirebaseConfigured() || !firebaseId) {
+    return false;
+  }
+  
+  try {
+    const docRef = doc(db, FIREBASE_COLLECTION, firebaseId);
+    await updateDoc(docRef, {
+      ...updates,
+      updatedAt: Timestamp.now()
+    });
+    return true;
+  } catch (error) {
+    console.error('Error updating Firebase document:', error);
+    return false;
+  }
+};
+
+// Update RSVP data (for manual edits) - Hybrid: localStorage + Firebase
+export const updateRSVP = async (rsvpId, updates) => {
   const rsvps = loadRSVPs();
   const updatedRSVPs = rsvps.map(rsvp => {
     if (rsvp.id === rsvpId) {
@@ -257,14 +472,56 @@ export const updateRSVP = (rsvpId, updates) => {
     return rsvp;
   });
   saveRSVPs(updatedRSVPs);
+  
+  // Try to sync to Firebase if firebaseId exists
+  const updatedRSVP = updatedRSVPs.find(r => r.id === rsvpId);
+  if (updatedRSVP && updatedRSVP.firebaseId) {
+    try {
+      await updateRSVPInFirebase(updatedRSVP.firebaseId, updates);
+      console.log('✓ RSVP updated in Firebase');
+    } catch (error) {
+      console.warn('Failed to update in Firebase:', error);
+    }
+  }
+  
   return updatedRSVPs;
 };
 
-// Delete a specific RSVP
-export const deleteRSVP = (rsvpId) => {
+// Delete RSVP from Firebase
+const deleteRSVPFromFirebase = async (firebaseId) => {
+  if (!isFirebaseConfigured() || !firebaseId) {
+    return false;
+  }
+  
+  try {
+    const docRef = doc(db, FIREBASE_COLLECTION, firebaseId);
+    await deleteDoc(docRef);
+    return true;
+  } catch (error) {
+    console.error('Error deleting from Firebase:', error);
+    return false;
+  }
+};
+
+// Delete a specific RSVP - Hybrid: localStorage + Firebase
+export const deleteRSVP = async (rsvpId) => {
   const rsvps = loadRSVPs();
+  const rsvpToDelete = rsvps.find(r => r.id === rsvpId);
+  const firebaseId = rsvpToDelete?.firebaseId;
+  
   const updatedRSVPs = rsvps.filter(rsvp => rsvp.id !== rsvpId);
   saveRSVPs(updatedRSVPs);
+  
+  // Try to delete from Firebase if firebaseId exists
+  if (firebaseId) {
+    try {
+      await deleteRSVPFromFirebase(firebaseId);
+      console.log('✓ RSVP deleted from Firebase');
+    } catch (error) {
+      console.warn('Failed to delete from Firebase:', error);
+    }
+  }
+  
   return updatedRSVPs;
 };
 

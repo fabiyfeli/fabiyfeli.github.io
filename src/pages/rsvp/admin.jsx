@@ -123,16 +123,16 @@ const RSVPAdmin = () => {
     }
   };
 
-  const handleToggleApproval = (rsvpId) => {
-    toggleRSVPApproval(rsvpId);
+  const handleToggleApproval = async (rsvpId) => {
+    await toggleRSVPApproval(rsvpId);
     loadData();
   };
 
-  const handleToggleAttendance = (rsvpId) => {
+  const handleToggleAttendance = async (rsvpId) => {
     const rsvp = rsvps.find(r => r.id === rsvpId);
     if (rsvp) {
       const newAttendance = rsvp.attendance === 'yes' ? 'no' : 'yes';
-      updateRSVP(rsvpId, { attendance: newAttendance });
+      await updateRSVP(rsvpId, { attendance: newAttendance });
       loadData();
     }
   };
@@ -147,18 +147,18 @@ const RSVPAdmin = () => {
     setEditValue('');
   };
 
-  const saveEdit = () => {
+  const saveEdit = async () => {
     if (editingField) {
-      updateRSVP(editingField.rsvpId, { [editingField.field]: editValue });
+      await updateRSVP(editingField.rsvpId, { [editingField.field]: editValue });
       setEditingField(null);
       setEditValue('');
       loadData();
     }
   };
 
-  const handleDelete = (rsvpId, guestName) => {
+  const handleDelete = async (rsvpId, guestName) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar la confirmación de ${guestName}?`)) {
-      deleteRSVP(rsvpId);
+      await deleteRSVP(rsvpId);
       loadData();
     }
   };

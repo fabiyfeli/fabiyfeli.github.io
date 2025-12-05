@@ -8,10 +8,13 @@ Una moderna aplicación web para bodas construida con React, diseñada para gest
 - **Vite** - Lightning-fast build tool and development server
 - **TailwindCSS** - Utility-first CSS framework with extensive customization
 - **React Router v6** - Declarative routing for React applications
-- **Local Storage** - Client-side data persistence for RSVP and guest book
+- **Firebase/Firestore** - Cloud database for persistent RSVP and guest book storage
+- **Local Storage** - Client-side fallback for offline functionality
+- **GitHub API Integration** - Optional backup sync to GitHub Issues/Discussions
 - **Responsive Design** - Fully responsive layout optimized for all devices
 - **Multi-language Support** - Language toggle for English/Spanish content
 - **Form Validation** - Custom form handling and validation
+- **Download Capabilities** - ICS calendar files and text confirmations
 
 ## 📋 Prerequisites
 
@@ -52,9 +55,11 @@ wedding/
 │   │   ├── wedding-details/    # Venue, timeline, FAQ
 │   │   ├── our-story/          # Couple's story timeline
 │   │   └── guest-book/         # Interactive guest book
+│   ├── config/                 # Configuration files
+│   │   └── firebase.js         # Firebase/Firestore setup
 │   ├── utils/                  # Utility functions
-│   │   ├── rsvpStorage.js      # RSVP local storage management
-│   │   └── guestBookStorage.js # Guest book local storage
+│   │   ├── rsvpStorage.js      # RSVP storage (localStorage + Firebase)
+│   │   └── guestBookStorage.js # Guest book storage (localStorage + Firebase)
 │   ├── styles/                 # Global styles
 │   ├── App.jsx                 # Main application component
 │   ├── Routes.jsx              # Application routes
@@ -103,14 +108,30 @@ This project uses Tailwind CSS for styling. The configuration includes:
 
 ## 💾 Data Storage
 
-The application uses browser localStorage for data persistence:
+The application uses a **hybrid storage system** combining localStorage and Firebase/Firestore:
 
-- **RSVP Data** - Guest responses and meal preferences stored locally
-- **Guest Book Messages** - Messages, reactions, and statistics stored locally
+### localStorage (Fast, Offline-First)
+- Provides instant loading and works offline
+- Acts as a local cache for better performance
+- No configuration needed
+
+### Firebase/Firestore (Persistent, Cloud-Synced)
+- Stores data persistently in the cloud
+- Syncs across devices automatically
+- Survives browser cache clears
+- Requires configuration (see `FIREBASE_SETUP.md`)
+
+### Data Types:
+- **RSVP Data** - Guest responses, meal preferences, and special requirements
+- **Guest Book Messages** - Messages with language filtering and statistics
+- **Admin Data** - Approval status and manual edits
 
 Storage utilities are located in `src/utils/`:
-- `rsvpStorage.js` - RSVP management functions
-- `guestBookStorage.js` - Guest book management functions
+- `rsvpStorage.js` - RSVP management (localStorage + Firebase sync)
+- `guestBookStorage.js` - Guest book management (localStorage + Firebase sync)
+
+### Setup Firebase:
+See detailed instructions in `FIREBASE_SETUP.md` to configure Firebase/Firestore for persistent cloud storage.
 
 ## 📱 Responsive Design
 
@@ -139,7 +160,23 @@ The site will be deployed to: `https://fabiyfeli.github.io`
 
 ## 🌐 Environment
 
-The application runs entirely on the client-side with no backend server required. All data is stored in the browser's localStorage.
+The application runs entirely on the client-side with no backend server required. Data is stored in:
+1. **localStorage** - For instant access and offline functionality
+2. **Firebase/Firestore** - For persistent cloud storage (optional, requires setup)
+3. **GitHub API** - For optional backup synchronization (admin feature)
+
+## 🔧 Configuration
+
+### Firebase Setup (Required for Production)
+1. Create a Firebase project at https://console.firebase.google.com/
+2. Copy your credentials to `src/config/firebase.js`
+3. Configure Firestore security rules (see `FIREBASE_SETUP.md`)
+4. Deploy and test
+
+### GitHub API (Optional)
+Admin panels support GitHub sync for additional backup:
+- RSVP Admin → Sync to GitHub repository file
+- Guest Book Admin → Sync to GitHub Issues/Discussions
 
 ## 🙏 Acknowledgments
 

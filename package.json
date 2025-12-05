@@ -40,6 +40,7 @@
     "d3": "^7.9.0",
     "date-fns": "^4.1.0",
     "dotenv": "^16.0.1",
+    "firebase": "^12.6.0",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.484.0",
     "react": "^18.2.0",
@@ -93,7 +94,5 @@
     "vite": "^7.2.4",
     "vite-tsconfig-paths": "3.6.0"
   },
-
   "homepage": "https://fabiyfeli.github.io"
-
 }

@@ -9,6 +9,7 @@ import WeddingDetails from './pages/wedding-details';
 import OurStory from './pages/our-story';
 import Homepage from './pages/homepage';
 import GuestBook from './pages/guest-book';
+import GuestBookAdmin from './pages/guest-book/admin';
 
 const Routes = () => {
   return (
@@ -24,6 +25,7 @@ const Routes = () => {
         <Route path="/our-story" element={<OurStory />} />
         <Route path="/homepage" element={<Homepage />} />
         <Route path="/guest-book" element={<GuestBook />} />
+        <Route path="/guest-book-admin" element={<GuestBookAdmin />} />
         <Route path="*" element={<NotFound />} />
       </RouterRoutes>
       </ErrorBoundary>
