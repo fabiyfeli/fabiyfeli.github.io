@@ -65,7 +65,8 @@ const RSVP = () => {
 
   const handleSubmit = () => {
     try {
-      addRSVP(formData);
+      const result = addRSVP(formData);
+      setFormData(prev => ({ ...prev, isUpdate: result.isUpdate }));
       setShowConfirmation(true);
     } catch (error) {
       console.error('Error saving RSVP:', error);

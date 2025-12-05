@@ -3,25 +3,41 @@ import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 
 const ConfirmationModal = ({ formData, onClose, language = 'es' }) => {
+  const isUpdate = formData?.isUpdate;
+  
   const content = {
     es: {
-      title: '¡Confirmación Recibida!',
-      messageAttending: (name) => `¡Gracias por confirmar tu asistencia, ${name}! No podemos esperar a celebrar contigo.`,
-      messageNotAttending: (name) => `Gracias por hacernos saber, ${name}. Te extrañaremos en nuestro día especial.`,
-      emailSentTitle: 'Correo de Confirmación Enviado',
-      emailSentDesc: (email) => `Hemos enviado una confirmación a ${email} con todos los detalles.`,
+      title: isUpdate ? '¡Confirmación Actualizada!' : '¡Confirmación Recibida!',
+      messageAttending: (name) => isUpdate 
+        ? `¡Gracias por actualizar tu confirmación, ${name}! Hemos guardado todos los cambios.`
+        : `¡Gracias por confirmar tu asistencia, ${name}! No podemos esperar a celebrar contigo.`,
+      messageNotAttending: (name) => isUpdate
+        ? `Gracias por actualizar tu información, ${name}.`
+        : `Gracias por hacernos saber, ${name}. Te extrañaremos en nuestro día especial.`,
+      emailSentTitle: isUpdate ? 'Actualización Guardada' : 'Correo de Confirmación Enviado',
+      emailSentDesc: (email) => isUpdate
+        ? `Tu confirmación ha sido actualizada. Los cambios serán revisados por los organizadores.`
+        : `Hemos enviado una confirmación a ${email} con todos los detalles.`,
       calendarTitle: 'Marca tu Calendario',
       calendarDesc: 'Te enviaremos un recordatorio cerca de la fecha junto con los detalles del lugar e indicaciones.',
+      updateNote: 'Puedes volver a enviar el formulario con el mismo email si necesitas hacer cambios.',
       close: 'Cerrar'
     },
     en: {
-      title: 'RSVP Confirmed!',
-      messageAttending: (name) => `Thank you for confirming your attendance, ${name}! We can't wait to celebrate with you.`,
-      messageNotAttending: (name) => `Thank you for letting us know, ${name}. You'll be missed on our special day.`,
-      emailSentTitle: 'Confirmation Email Sent',
-      emailSentDesc: (email) => `We've sent a confirmation to ${email} with all the details.`,
+      title: isUpdate ? 'RSVP Updated!' : 'RSVP Confirmed!',
+      messageAttending: (name) => isUpdate
+        ? `Thank you for updating your RSVP, ${name}! We've saved all your changes.`
+        : `Thank you for confirming your attendance, ${name}! We can't wait to celebrate with you.`,
+      messageNotAttending: (name) => isUpdate
+        ? `Thank you for updating your information, ${name}.`
+        : `Thank you for letting us know, ${name}. You'll be missed on our special day.`,
+      emailSentTitle: isUpdate ? 'Update Saved' : 'Confirmation Email Sent',
+      emailSentDesc: (email) => isUpdate
+        ? `Your RSVP has been updated. Changes will be reviewed by the organizers.`
+        : `We've sent a confirmation to ${email} with all the details.`,
       calendarTitle: 'Mark Your Calendar',
       calendarDesc: 'We\'ll send you a reminder closer to the date along with venue details and directions.',
+      updateNote: 'You can resubmit the form with the same email if you need to make changes.',
       close: 'Close'
     }
   };
@@ -67,7 +83,7 @@ const ConfirmationModal = ({ formData, onClose, language = 'es' }) => {
             </div>
           </div>
 
-          {formData?.attendance === 'yes' && (
+          {formData?.attendance === 'yes' && !isUpdate && (
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 mb-6">
               <div className="flex items-start gap-3">
                 <Icon name="Calendar" size={20} color="var(--color-primary)" className="mt-0.5" />
@@ -79,6 +95,17 @@ const ConfirmationModal = ({ formData, onClose, language = 'es' }) => {
                     {t.calendarDesc}
                   </p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {!isUpdate && (
+            <div className="bg-muted/50 border border-border rounded-lg p-3 mb-6">
+              <div className="flex items-start gap-2">
+                <Icon name="Info" size={16} color="var(--color-muted-foreground)" className="mt-0.5" />
+                <p className="text-xs text-muted-foreground">
+                  {t.updateNote}
+                </p>
               </div>
             </div>
           )}

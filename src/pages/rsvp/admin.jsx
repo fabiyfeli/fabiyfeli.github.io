@@ -27,11 +27,18 @@ const RSVPAdmin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingField, setEditingField] = useState(null); // { rsvpId, field }
   const [editValue, setEditValue] = useState('');
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [githubToken, setGithubToken] = useState('');
 
   useEffect(() => {
     if (isAuthenticated()) {
       setIsAuth(true);
       loadData();
+    }
+    // Load GitHub token from localStorage
+    const savedToken = localStorage.getItem('github_token');
+    if (savedToken) {
+      setGithubToken(savedToken);
     }
   }, []);
 
@@ -153,6 +160,85 @@ const RSVPAdmin = () => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar la confirmación de ${guestName}?`)) {
       deleteRSVP(rsvpId);
       loadData();
+    }
+  };
+
+  const handleSaveToken = () => {
+    if (!githubToken.trim()) {
+      alert('Por favor ingresa un token válido');
+      return;
+    }
+    localStorage.setItem('github_token', githubToken);
+    setShowTokenModal(false);
+    alert('Token guardado exitosamente');
+  };
+
+  const handleSyncToGitHub = async () => {
+    if (!githubToken) {
+      setShowTokenModal(true);
+      return;
+    }
+
+    try {
+      const rsvpData = loadRSVPs();
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
+      const fileName = `rsvp-backup-${timestamp}.json`;
+      const content = JSON.stringify(rsvpData, null, 2);
+      
+      // GitHub API endpoint for creating/updating files
+      const repo = 'fabiyfeli/fabiyfeli.github.io';
+      const path = `data/${fileName}`;
+      const url = `https://api.github.com/repos/${repo}/contents/${path}`;
+
+      // First, try to get the file to see if it exists
+      let fileSha = null;
+      try {
+        const getResponse = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Authorization': `token ${githubToken}`,
+            'Accept': 'application/vnd.github.v3+json',
+          },
+        });
+        
+        if (getResponse.ok) {
+          const fileData = await getResponse.json();
+          fileSha = fileData.sha;
+        }
+      } catch (e) {
+        // File doesn't exist, that's okay
+      }
+
+      // Create or update the file
+      const body = {
+        message: `Backup RSVPs - ${new Date().toLocaleString('es-CL')}`,
+        content: btoa(unescape(encodeURIComponent(content))), // Base64 encode with UTF-8 support
+      };
+
+      // Add sha only if file exists
+      if (fileSha) {
+        body.sha = fileSha;
+      }
+
+      const response = await fetch(url, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `token ${githubToken}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/vnd.github.v3+json',
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (response.ok) {
+        alert('✓ RSVPs sincronizados con GitHub exitosamente');
+      } else {
+        const error = await response.json();
+        throw new Error(error.message || 'Error al sincronizar con GitHub');
+      }
+    } catch (error) {
+      console.error('Error syncing to GitHub:', error);
+      alert(`✗ Error al sincronizar con GitHub: ${error.message}`);
     }
   };
 
@@ -379,6 +465,20 @@ const RSVPAdmin = () => {
                 Exportar CSV
               </button>
               <button
+                onClick={handleSyncToGitHub}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <Icon name="Github" className="w-4 h-4" />
+                Sincronizar GitHub
+              </button>
+              <button
+                onClick={() => setShowTokenModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                <Icon name="Key" className="w-4 h-4" />
+                Configurar Token
+              </button>
+              <button
                 onClick={handleClearAll}
                 className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
               >
@@ -402,10 +502,20 @@ const RSVPAdmin = () => {
                 filteredRSVPs.map((rsvp) => (
                   <div key={rsvp.id} className={`bg-card rounded-xl p-6 border-2 ${
                     rsvp.approved ? 'border-green-500/30' : 'border-orange-500/30'
-                  }`}>
+                  } ${rsvp.previouslyApproved && !rsvp.approved ? 'ring-2 ring-blue-500/50' : ''}`}>
                     <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-6">
                       {/* Main Info */}
                       <div className="flex-1">
+                        {rsvp.previouslyApproved && !rsvp.approved && (
+                          <div className="mb-3 px-3 py-2 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                              <Icon name="RefreshCw" className="w-4 h-4" />
+                              <span className="text-sm font-medium">
+                                Actualización Pendiente - Este invitado modificó su RSVP
+                              </span>
+                            </div>
+                          </div>
+                        )}
                         <div className="flex items-start gap-4 mb-4">
                           <button
                             onClick={() => handleToggleAttendance(rsvp.id)}
@@ -471,6 +581,11 @@ const RSVPAdmin = () => {
                                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
                                   <Icon name="CheckCircle2" className="w-3 h-3" />
                                   Aprobado
+                                </span>
+                              ) : rsvp.previouslyApproved ? (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                                  <Icon name="RefreshCw" className="w-3 h-3" />
+                                  Actualizado
                                 </span>
                               ) : (
                                 <span className="inline-flex items-center gap-1 px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
@@ -561,15 +676,29 @@ const RSVPAdmin = () => {
                                 )}
                               </span>
                             </div>
-                            <p className="text-xs text-muted-foreground mt-2">
-                              Enviado: {new Date(rsvp.submittedAt).toLocaleDateString('es-CL', {
-                                year: 'numeric',
-                                month: 'long',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </p>
+                            <div className="text-xs text-muted-foreground mt-2 space-y-1">
+                              <p>
+                                Enviado: {new Date(rsvp.submittedAt).toLocaleDateString('es-CL', {
+                                  year: 'numeric',
+                                  month: 'long',
+                                  day: 'numeric',
+                                  hour: '2-digit',
+                                  minute: '2-digit'
+                                })}
+                              </p>
+                              {rsvp.updatedAt && (
+                                <p className="text-blue-600 dark:text-blue-400 font-medium">
+                                  <Icon name="RefreshCw" className="w-3 h-3 inline mr-1" />
+                                  Actualizado: {new Date(rsvp.updatedAt).toLocaleDateString('es-CL', {
+                                    year: 'numeric',
+                                    month: 'long',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
 
@@ -694,6 +823,71 @@ const RSVPAdmin = () => {
           </div>
         </div>
       </main>
+
+      {/* GitHub Token Configuration Modal */}
+      {showTokenModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full p-6 border border-border">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-foreground">Configurar Token de GitHub</h3>
+              <button
+                onClick={() => setShowTokenModal(false)}
+                className="text-muted-foreground hover:text-foreground"
+              >
+                <Icon name="X" className="w-6 h-6" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-muted-foreground mb-4">
+                Para guardar RSVPs en GitHub, necesitas un Personal Access Token con permisos de escritura.
+              </p>
+              
+              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
+                <p className="text-sm text-blue-900 dark:text-blue-100 mb-2 font-semibold">
+                  Cómo obtener tu token:
+                </p>
+                <ol className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
+                  <li>Ve a GitHub → Settings → Developer settings</li>
+                  <li>Clic en "Personal access tokens" → "Tokens (classic)"</li>
+                  <li>Clic en "Generate new token (classic)"</li>
+                  <li>Selecciona el scope "repo" (acceso completo)</li>
+                  <li>Copia el token generado</li>
+                </ol>
+              </div>
+              
+              <label className="block text-sm font-medium text-foreground mb-2">
+                GitHub Token
+              </label>
+              <input
+                type="password"
+                value={githubToken}
+                onChange={(e) => setGithubToken(e.target.value)}
+                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+              <p className="text-xs text-muted-foreground mt-2">
+                El token se guarda localmente en tu navegador y nunca se comparte.
+              </p>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={handleSaveToken}
+                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
+              >
+                Guardar Token
+              </button>
+              <button
+                onClick={() => setShowTokenModal(false)}
+                className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

@@ -79,12 +79,13 @@ export const addRSVP = (rsvpData) => {
       ...rsvpData,
       id: existingRSVP.id, // Keep the original ID
       submittedAt: new Date(), // Update submission time
-      // Keep approved status if it was already approved
-      approved: existingRSVP.approved || false
+      updatedAt: new Date(), // Track when it was updated
+      approved: false, // Reset approval status so admin can review changes
+      previouslyApproved: existingRSVP.approved // Track if it was previously approved
     };
     rsvps[existingIndex] = updatedRSVP;
     saveRSVPs(rsvps);
-    return updatedRSVP;
+    return { ...updatedRSVP, isUpdate: true }; // Flag as update
   } else {
     // Generate unique ID using timestamp + random number to avoid collisions
     const generateUniqueId = () => {
@@ -105,7 +106,7 @@ export const addRSVP = (rsvpData) => {
     };
     const updatedRSVPs = [rsvpWithMetadata, ...rsvps];
     saveRSVPs(updatedRSVPs);
-    return rsvpWithMetadata;
+    return { ...rsvpWithMetadata, isUpdate: false }; // Flag as new
   }
 };
 
