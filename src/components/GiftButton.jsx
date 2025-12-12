@@ -28,9 +28,25 @@ const GiftButton = ({ language = 'es' } = {}) => {
           },
           {
             title: "Transferencia Bancaria Local",
-            subtitle: "Banco/Cta por confirmar",
-            link: null,
-            icon: "🏦"
+            icon: "🏦",
+            bankDetails: [
+              {
+                name: "Fabiana Elizabeth Castro Marcano",
+                rut: "26.282.997-9",
+                type: "Cuenta Corriente",
+                account: "0 000 90 21320 2",
+                bank: "Banco Santander",
+                email: "fabiana.e.c.m@gmail.com"
+              },
+              {
+                name: "Felipe Aguilera",
+                rut: "17.911.849-1",
+                type: "Cuenta Corriente",
+                account: "00-022-23631-07",
+                bank: "Banco de Chile",
+                email: "f.millacura.a@gmail.com"
+              }
+            ]
           },
           {
             title: "Transferencia Internacional (Wise)",
@@ -51,9 +67,25 @@ const GiftButton = ({ language = 'es' } = {}) => {
           },
           {
             title: "Local Bank Transfer",
-            subtitle: "Bank/Account TBA",
-            link: null,
-            icon: "🏦"
+            icon: "🏦",
+            bankDetails: [
+              {
+                name: "Fabiana Elizabeth Castro Marcano",
+                rut: "26.282.997-9",
+                type: "Checking Account",
+                account: "0 000 90 21320 2",
+                bank: "Banco Santander",
+                email: "fabiana.e.c.m@gmail.com"
+              },
+              {
+                name: "Felipe Aguilera",
+                rut: "17.911.849-1",
+                type: "Checking Account",
+                account: "00-022-23631-07",
+                bank: "Banco de Chile",
+                email: "f.millacura.a@gmail.com"
+              }
+            ]
           },
           {
             title: "International Transfer (Wise)",
@@ -113,41 +145,52 @@ const GiftButton = ({ language = 'es' } = {}) => {
             <div className="space-y-3 mb-6">
               {giftInfo.options.map((option, index) => {
                 const isClickable = option.link !== null;
-                return isClickable ? (
-                  <a
-                    key={index}
-                    href={option.link}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="block p-4 rounded-lg border border-border bg-background hover:bg-muted transition-colors active:scale-95 transform"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{option.icon}</span>
-                      <span className="font-medium text-foreground hover:text-primary text-sm md:text-base">
-                        {option.title}
-                      </span>
-                    </div>
-                  </a>
-                ) : (
-                  <div
-                    key={index}
-                    className="p-4 rounded-lg border border-border bg-muted/50 cursor-not-allowed opacity-60"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-2xl">{option.icon}</span>
-                      <div className="flex-1">
-                        <span className="font-medium text-foreground text-sm md:text-base">
-                          {option.title}
-                        </span>
-                        {option.subtitle && (
-                          <p className="text-xs text-muted-foreground">
-                            {option.subtitle}
-                          </p>
-                        )}
+                
+                if (option.bankDetails) {
+                  // Bank transfer option with expandable details
+                  return (
+                    <div key={index} className="space-y-2">
+                      <div className="p-4 rounded-lg border border-border bg-background">
+                        <div className="flex items-center gap-3 mb-3">
+                          <span className="text-2xl">{option.icon}</span>
+                          <span className="font-medium text-foreground text-sm md:text-base">
+                            {option.title}
+                          </span>
+                        </div>
+                        {/* Bank account details */}
+                        <div className="grid grid-cols-1 gap-3 mt-3">
+                          {option.bankDetails.map((bank, bankIndex) => (
+                            <div key={bankIndex} className="bg-muted/30 rounded p-3 border border-border/50 text-xs">
+                              <p className="font-semibold text-foreground">{bank.name}</p>
+                              <p className="text-muted-foreground">RUT: {bank.rut}</p>
+                              <p className="text-muted-foreground">{bank.type}</p>
+                              <p className="text-muted-foreground font-mono">{bank.account}</p>
+                              <p className="text-muted-foreground">{bank.bank}</p>
+                              <p className="text-muted-foreground">{bank.email}</p>
+                            </div>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
+                  );
+                } else if (isClickable) {
+                  return (
+                    <a
+                      key={index}
+                      href={option.link}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block p-4 rounded-lg border border-border bg-background hover:bg-muted transition-colors active:scale-95 transform"
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{option.icon}</span>
+                        <span className="font-medium text-foreground hover:text-primary text-sm md:text-base">
+                          {option.title}
+                        </span>
+                      </div>
+                    </a>
+                  );
+                }
               })}
             </div>
 
