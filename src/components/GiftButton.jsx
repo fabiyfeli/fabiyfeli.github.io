@@ -1,13 +1,16 @@
 import { useState, useEffect } from 'react';
 import Icon from './AppIcon';
-import { useLanguage } from '../context/LanguageContext';
 
-const GiftButton = ({ language } = {}) => {
-  const { language: contextLanguage } = useLanguage();
+const GiftButton = ({ language = 'es' }) => {
   const [showModal, setShowModal] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [expandedBank, setExpandedBank] = useState(false);
-  const currentLanguage = language || contextLanguage || 'es';
+  const [currentLanguage, setCurrentLanguage] = useState(language);
+
+  useEffect(() => {
+    // Listen for language changes from other pages
+    setCurrentLanguage(language);
+  }, [language]);
 
   useEffect(() => {
     const handleScroll = () => {
