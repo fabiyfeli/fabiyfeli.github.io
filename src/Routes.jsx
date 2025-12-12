@@ -2,6 +2,7 @@ import React from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "components/ScrollToTop";
 import ErrorBoundary from "components/ErrorBoundary";
+import GiftButton from "components/GiftButton";
 import NotFound from "pages/NotFound";
 import RSVP from './pages/rsvp';
 import RSVPAdmin from './pages/rsvp/admin';
@@ -15,8 +16,9 @@ const Routes = () => {
   return (
     <BrowserRouter>
       <ErrorBoundary>
-      <ScrollToTop />
-      <RouterRoutes>
+        <ScrollToTop />
+        <GiftButton />
+        <RouterRoutes>
         {/* Define your route here */}
         <Route path="/" element={<Homepage />} />
         <Route path="/rsvp" element={<RSVP />} />
