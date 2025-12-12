@@ -27,6 +27,12 @@ const GiftButton = ({ language = 'es' } = {}) => {
             icon: "💳"
           },
           {
+            title: "Transferencia Bancaria Local",
+            subtitle: "Banco/Cta por confirmar",
+            link: null,
+            icon: "🏦"
+          },
+          {
             title: "Transferencia Internacional (Wise)",
             link: "https://wise.com/pay/me/juana100",
             icon: "🌍"
@@ -44,6 +50,12 @@ const GiftButton = ({ language = 'es' } = {}) => {
             icon: "💳"
           },
           {
+            title: "Local Bank Transfer",
+            subtitle: "Bank/Account TBA",
+            link: null,
+            icon: "🏦"
+          },
+          {
             title: "International Transfer (Wise)",
             link: "https://wise.com/pay/me/juana100",
             icon: "🌍"
@@ -56,12 +68,13 @@ const GiftButton = ({ language = 'es' } = {}) => {
 
   return (
     <>
-      {/* Floating Gift Button */}
+      {/* Floating Gift Button - Fixed Position */}
       <button
         onClick={() => setShowModal(true)}
-        className="fixed bottom-6 right-6 md:bottom-8 md:right-8 z-40 bg-warning hover:bg-warning/90 text-warning-foreground rounded-full w-14 h-14 md:w-16 md:h-16 shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center text-2xl md:text-3xl"
+        className="fixed top-1/2 right-4 md:right-6 z-40 bg-warning hover:bg-warning/90 text-warning-foreground rounded-full w-14 h-14 md:w-16 md:h-16 shadow-lg transition-all duration-300 transform hover:scale-110 active:scale-95 flex items-center justify-center text-2xl md:text-3xl"
         style={{
-          transform: `translateY(${translateY}px) scale(1)`,
+          transform: 'translateY(-50%)',
+          animation: 'tilt 2s ease-in-out infinite'
         }}
         title={language === 'es' ? 'Regalos' : 'Gifts'}
       >
@@ -98,22 +111,44 @@ const GiftButton = ({ language = 'es' } = {}) => {
 
             {/* Gift Options */}
             <div className="space-y-3 mb-6">
-              {giftInfo.options.map((option, index) => (
-                <a
-                  key={index}
-                  href={option.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block p-4 rounded-lg border border-border bg-background hover:bg-muted transition-colors active:scale-95 transform"
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl">{option.icon}</span>
-                    <span className="font-medium text-foreground hover:text-primary text-sm md:text-base">
-                      {option.title}
-                    </span>
+              {giftInfo.options.map((option, index) => {
+                const isClickable = option.link !== null;
+                return isClickable ? (
+                  <a
+                    key={index}
+                    href={option.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block p-4 rounded-lg border border-border bg-background hover:bg-muted transition-colors active:scale-95 transform"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{option.icon}</span>
+                      <span className="font-medium text-foreground hover:text-primary text-sm md:text-base">
+                        {option.title}
+                      </span>
+                    </div>
+                  </a>
+                ) : (
+                  <div
+                    key={index}
+                    className="p-4 rounded-lg border border-border bg-muted/50 cursor-not-allowed opacity-60"
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-2xl">{option.icon}</span>
+                      <div className="flex-1">
+                        <span className="font-medium text-foreground text-sm md:text-base">
+                          {option.title}
+                        </span>
+                        {option.subtitle && (
+                          <p className="text-xs text-muted-foreground">
+                            {option.subtitle}
+                          </p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                </a>
-              ))}
+                );
+              })}
             </div>
 
             {/* Close Button */}
@@ -128,6 +163,25 @@ const GiftButton = ({ language = 'es' } = {}) => {
       )}
 
       <style>{`
+        @keyframes tilt {
+          0%, 100% {
+            transform: translateY(-50%) rotate(0deg);
+            animation-timing-function: ease-in;
+          }
+          25% {
+            transform: translateY(-50%) rotate(-8deg);
+            animation-timing-function: ease-in-out;
+          }
+          50% {
+            transform: translateY(-50%) rotate(0deg);
+            animation-timing-function: ease-in-out;
+          }
+          75% {
+            transform: translateY(-50%) rotate(8deg);
+            animation-timing-function: ease-in;
+          }
+        }
+        
         @keyframes slideUp {
           from {
             opacity: 0;
