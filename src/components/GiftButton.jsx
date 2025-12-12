@@ -4,7 +4,7 @@ import Icon from './AppIcon';
 const GiftButton = ({ language = 'es' } = {}) => {
   const [showModal, setShowModal] = useState(false);
   const [scrollY, setScrollY] = useState(0);
-  const [isHiding, setIsHiding] = useState(false);
+  const [expandedBank, setExpandedBank] = useState(false);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -147,30 +147,43 @@ const GiftButton = ({ language = 'es' } = {}) => {
                 const isClickable = option.link !== null;
                 
                 if (option.bankDetails) {
-                  // Bank transfer option with expandable details
+                  // Bank transfer option with collapsible details
                   return (
-                    <div key={index} className="space-y-2">
-                      <div className="p-4 rounded-lg border border-border bg-background">
-                        <div className="flex items-center gap-3 mb-3">
-                          <span className="text-2xl">{option.icon}</span>
-                          <span className="font-medium text-foreground text-sm md:text-base">
-                            {option.title}
-                          </span>
+                    <div key={index}>
+                      <button
+                        onClick={() => setExpandedBank(expandedBank === index ? false : index)}
+                        className="w-full p-4 rounded-lg border border-border bg-background hover:bg-muted transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-3 flex-1">
+                            <span className="text-2xl">{option.icon}</span>
+                            <span className="font-medium text-foreground text-sm md:text-base text-left">
+                              {option.title}
+                            </span>
+                          </div>
+                          <Icon
+                            name={expandedBank === index ? "ChevronUp" : "ChevronDown"}
+                            size={20}
+                            className="text-primary flex-shrink-0 transition-transform duration-300"
+                          />
                         </div>
-                        {/* Bank account details */}
-                        <div className="grid grid-cols-1 gap-3 mt-3">
+                      </button>
+                      
+                      {/* Expandable bank details */}
+                      {expandedBank === index && (
+                        <div className="mt-2 grid grid-cols-1 gap-2 animate-in fade-in duration-200">
                           {option.bankDetails.map((bank, bankIndex) => (
-                            <div key={bankIndex} className="bg-muted/30 rounded p-3 border border-border/50 text-xs">
+                            <div key={bankIndex} className="bg-muted/30 rounded-lg p-3 border border-border/50 text-xs">
                               <p className="font-semibold text-foreground">{bank.name}</p>
                               <p className="text-muted-foreground">RUT: {bank.rut}</p>
                               <p className="text-muted-foreground">{bank.type}</p>
-                              <p className="text-muted-foreground font-mono">{bank.account}</p>
+                              <p className="text-muted-foreground font-mono text-xs break-all">{bank.account}</p>
                               <p className="text-muted-foreground">{bank.bank}</p>
                               <p className="text-muted-foreground">{bank.email}</p>
                             </div>
                           ))}
                         </div>
-                      </div>
+                      )}
                     </div>
                   );
                 } else if (isClickable) {
