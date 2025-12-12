@@ -14,7 +14,9 @@ import {
   toggleRSVPApproval,
   updateRSVP,
   deleteRSVP,
-  importRSVPsFromCSV
+  importRSVPsFromCSV,
+  importRSVPsFromCSVWithFirebase,
+  migrateLocalStorageToFirebase
 } from '../../utils/rsvpStorage';
 
 const RSVPAdmin = () => {
@@ -28,31 +30,43 @@ const RSVPAdmin = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [editingField, setEditingField] = useState(null); // { rsvpId, field }
   const [editValue, setEditValue] = useState('');
-  const [showTokenModal, setShowTokenModal] = useState(false);
-  const [githubToken, setGithubToken] = useState('');
   const [isLoadingFirebase, setIsLoadingFirebase] = useState(false);
+  const [dataSource, setDataSource] = useState(''); // 'firebase', 'localStorage', 'error'
+  const [isMigrating, setIsMigrating] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) {
       setIsAuth(true);
       loadData();
     }
-    // Load GitHub token from localStorage
-    const savedToken = localStorage.getItem('github_token');
-    if (savedToken) {
-      setGithubToken(savedToken);
-    }
   }, []);
 
   const loadData = async () => {
     setIsLoadingFirebase(true);
+    setDataSource('');
+    
+    console.log('🚀 Admin Panel: Starting data load...');
+    console.log('📅 Current date:', new Date().toLocaleString());
+    
     try {
       const loadedRSVPs = await loadRSVPsWithSync();
       setRsvps(loadedRSVPs);
       setStats(getRSVPStats());
-      console.log('✓ Loaded', loadedRSVPs.length, 'RSVPs from Firebase/localStorage');
+      
+      // Determine data source from console logs
+      if (loadedRSVPs.length > 0 && loadedRSVPs[0].firebaseId) {
+        setDataSource('firebase');
+        console.log('✅ Data source: Firebase');
+      } else if (loadedRSVPs.length > 0) {
+        setDataSource('localStorage');
+        console.log('⚠️ Data source: localStorage only');
+      }
+      
+      console.log('✓ Loaded', loadedRSVPs.length, 'RSVPs');
+      console.log('📝 First RSVP date:', loadedRSVPs[0]?.submittedAt);
     } catch (error) {
-      console.error('Error loading RSVPs:', error);
+      console.error('❌ Error loading RSVPs:', error);
+      setDataSource('error');
       // Fallback to local data
       const localRSVPs = loadRSVPs();
       setRsvps(localRSVPs);
@@ -64,14 +78,29 @@ const RSVPAdmin = () => {
 
   const handleRefreshFromFirebase = async () => {
     setIsLoadingFirebase(true);
+    setDataSource('');
+    
+    console.log('🔄 Manual refresh requested...');
+    
+    // Clear localStorage to force Firebase reload
+    localStorage.removeItem('wedding_rsvps');
+    console.log('🗑️ Cleared localStorage cache');
+    
     try {
-      // Force reload from Firebase
       const loadedRSVPs = await loadRSVPsWithSync();
       setRsvps(loadedRSVPs);
       setStats(getRSVPStats());
-      alert(`✓ Recargados ${loadedRSVPs.length} RSVPs desde Firebase`);
+      
+      if (loadedRSVPs.length > 0 && loadedRSVPs[0].firebaseId) {
+        setDataSource('firebase');
+        alert(`✓ Recargados ${loadedRSVPs.length} RSVPs desde Firebase\n\nÚltima actualización: ${loadedRSVPs[0]?.submittedAt?.toLocaleString()}`);
+      } else {
+        setDataSource('localStorage');
+        alert(`⚠️ No se pudieron cargar datos de Firebase.\nUsando ${loadedRSVPs.length} RSVPs de localStorage.`);
+      }
     } catch (error) {
-      console.error('Error refreshing from Firebase:', error);
+      console.error('❌ Error refreshing from Firebase:', error);
+      setDataSource('error');
       alert('Error al cargar desde Firebase. Ver consola para detalles.');
     } finally {
       setIsLoadingFirebase(false);
@@ -108,21 +137,36 @@ const RSVPAdmin = () => {
     }
 
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       try {
         const csvContent = e.target?.result;
         console.log('CSV Content loaded, length:', csvContent?.length);
         console.log('First 200 chars:', csvContent?.substring(0, 200));
         
-        const result = importRSVPsFromCSV(csvContent);
+        console.log('⏳ Importando y sincronizando con Firebase...');
+        
+        const result = await importRSVPsFromCSVWithFirebase(csvContent);
         console.log('Import result:', result);
         
         if (result.success) {
           const messages = [];
           if (result.updated > 0) messages.push(`${result.updated} actualizados`);
           if (result.added > 0) messages.push(`${result.added} nuevos`);
-          alert(`✓ Importación exitosa: ${messages.join(', ')}`);
-          loadData();
+          
+          let message = `✓ Importación exitosa: ${messages.join(', ')}`;
+          
+          if (result.firebaseSynced !== undefined) {
+            message += `\n\n☁️ Firebase: ${result.firebaseSynced} sincronizados`;
+            if (result.firebaseErrors > 0) {
+              message += `, ${result.firebaseErrors} errores`;
+            }
+          }
+          
+          alert(message);
+          
+          // Clear cache and reload from Firebase
+          localStorage.removeItem('wedding_rsvp_responses');
+          await loadData();
         } else {
           alert(`✗ Error al importar: ${result.error}`);
         }
@@ -193,84 +237,58 @@ const RSVPAdmin = () => {
     }
   };
 
-  const handleSaveToken = () => {
-    if (!githubToken.trim()) {
-      alert('Por favor ingresa un token válido');
-      return;
-    }
-    localStorage.setItem('github_token', githubToken);
-    setShowTokenModal(false);
-    alert('Token guardado exitosamente');
-  };
-
-  const handleSyncToGitHub = async () => {
-    if (!githubToken) {
-      setShowTokenModal(true);
+  const handleMigrateToFirebase = async () => {
+    const localRSVPs = loadRSVPs();
+    
+    if (localRSVPs.length === 0) {
+      alert('No hay RSVPs en localStorage para migrar');
       return;
     }
 
+    // Ask user if they want to overwrite existing data
+    const message = `¿Migrar ${localRSVPs.length} RSVPs de localStorage a Firebase?\n\n` +
+      `Si hay RSVPs duplicados (mismo email):\n` +
+      `• OK = Solo crear nuevos (no sobrescribe)\n` +
+      `• Cancelar = Abortar migración\n\n` +
+      `Para SOBRESCRIBIR duplicados, mantén presionado SHIFT y haz click en OK.`;
+    
+    if (!window.confirm(message)) {
+      return;
+    }
+
+    // Check if SHIFT key is pressed for force overwrite
+    const forceOverwrite = window.event && window.event.shiftKey;
+    
+    if (forceOverwrite) {
+      if (!window.confirm(`⚠️ MODO SOBRESCRITURA ACTIVADO\n\nEsto actualizará TODOS los RSVPs existentes en Firebase con los datos de localStorage.\n\n¿Continuar?`)) {
+        return;
+      }
+    }
+
+    setIsMigrating(true);
     try {
-      const rsvpData = loadRSVPs();
-      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5);
-      const fileName = `rsvp-backup-${timestamp}.json`;
-      const content = JSON.stringify(rsvpData, null, 2);
+      const result = await migrateLocalStorageToFirebase(forceOverwrite);
       
-      // GitHub API endpoint for creating/updating files
-      const repo = 'fabiyfeli/fabiyfeli.github.io';
-      const path = `data/${fileName}`;
-      const url = `https://api.github.com/repos/${repo}/contents/${path}`;
-
-      // First, try to get the file to see if it exists
-      let fileSha = null;
-      try {
-        const getResponse = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Authorization': `token ${githubToken}`,
-            'Accept': 'application/vnd.github.v3+json',
-          },
-        });
-        
-        if (getResponse.ok) {
-          const fileData = await getResponse.json();
-          fileSha = fileData.sha;
-        }
-      } catch (e) {
-        // File doesn't exist, that's okay
-      }
-
-      // Create or update the file
-      const body = {
-        message: `Backup RSVPs - ${new Date().toLocaleString('es-CL')}`,
-        content: btoa(unescape(encodeURIComponent(content))), // Base64 encode with UTF-8 support
-      };
-
-      // Add sha only if file exists
-      if (fileSha) {
-        body.sha = fileSha;
-      }
-
-      const response = await fetch(url, {
-        method: 'PUT',
-        headers: {
-          'Authorization': `token ${githubToken}`,
-          'Content-Type': 'application/json',
-          'Accept': 'application/vnd.github.v3+json',
-        },
-        body: JSON.stringify(body),
-      });
-
-      if (response.ok) {
-        alert('✓ RSVPs sincronizados con GitHub exitosamente');
-      } else {
-        const error = await response.json();
-        throw new Error(error.message || 'Error al sincronizar con GitHub');
-      }
+      let message = `✅ Migración completada!\n\n`;
+      if (result.successCount > 0) message += `${result.successCount} creados\n`;
+      if (result.updatedCount > 0) message += `${result.updatedCount} actualizados\n`;
+      if (result.skippedCount > 0) message += `${result.skippedCount} omitidos (ya existían)\n`;
+      if (result.errorCount > 0) message += `\n⚠️ ${result.errorCount} errores (ver consola)`;
+      
+      alert(message);
+      
+      // Clear localStorage cache and reload from Firebase
+      localStorage.removeItem('wedding_rsvp_responses');
+      await loadData();
     } catch (error) {
-      console.error('Error syncing to GitHub:', error);
-      alert(`✗ Error al sincronizar con GitHub: ${error.message}`);
+      console.error('Migration error:', error);
+      alert(`❌ Error durante la migración: ${error.message}`);
+    } finally {
+      setIsMigrating(false);
     }
   };
+
+
 
   const filteredRSVPs = rsvps
     .filter(rsvp => {
@@ -353,12 +371,35 @@ const RSVPAdmin = () => {
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-3xl sm:text-4xl font-display mb-2">
-                Confirmaciones RSVP
-              </h1>
-              <p className="text-muted-foreground">
-                Gestiona las confirmaciones de asistencia
-              </p>
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-3xl sm:text-4xl font-display mb-2">
+                    Confirmaciones RSVP
+                  </h1>
+                  <p className="text-muted-foreground">
+                    Gestiona las confirmaciones de asistencia
+                  </p>
+                </div>
+                {/* Data Source Indicator */}
+                {dataSource && (
+                  <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                    dataSource === 'firebase' ? 'bg-green-100 text-green-700 border border-green-300' :
+                    dataSource === 'localStorage' ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' :
+                    'bg-red-100 text-red-700 border border-red-300'
+                  }`}>
+                    <Icon name={
+                      dataSource === 'firebase' ? 'Cloud' :
+                      dataSource === 'localStorage' ? 'HardDrive' :
+                      'AlertCircle'
+                    } className="w-4 h-4" />
+                    <span className="text-sm font-medium">
+                      {dataSource === 'firebase' ? '☁️ Firebase' :
+                       dataSource === 'localStorage' ? '💾 Local' :
+                       '❌ Error'}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Stats Cards */}
@@ -503,18 +544,13 @@ const RSVPAdmin = () => {
                 {isLoadingFirebase ? 'Cargando...' : 'Recargar Firebase'}
               </button>
               <button
-                onClick={handleSyncToGitHub}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                onClick={handleMigrateToFirebase}
+                disabled={isMigrating}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Migrar/Sincronizar datos locales a Firebase (SHIFT+Click para sobrescribir duplicados)"
               >
-                <Icon name="Github" className="w-4 h-4" />
-                Sincronizar GitHub
-              </button>
-              <button
-                onClick={() => setShowTokenModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <Icon name="Key" className="w-4 h-4" />
-                Configurar Token
+                <Icon name={isMigrating ? "Loader2" : "Upload"} className={`w-4 h-4 ${isMigrating ? 'animate-spin' : ''}`} />
+                {isMigrating ? 'Migrando...' : 'Migrar a Firebase'}
               </button>
               <button
                 onClick={handleClearAll}
@@ -862,70 +898,7 @@ const RSVPAdmin = () => {
         </div>
       </main>
 
-      {/* GitHub Token Configuration Modal */}
-      {showTokenModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full p-6 border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-foreground">Configurar Token de GitHub</h3>
-              <button
-                onClick={() => setShowTokenModal(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Icon name="X" className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Para guardar RSVPs en GitHub, necesitas un Personal Access Token con permisos de escritura.
-              </p>
-              
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-900 dark:text-blue-100 mb-2 font-semibold">
-                  Cómo obtener tu token:
-                </p>
-                <ol className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                  <li>Ve a GitHub → Settings → Developer settings</li>
-                  <li>Clic en "Personal access tokens" → "Tokens (classic)"</li>
-                  <li>Clic en "Generate new token (classic)"</li>
-                  <li>Selecciona el scope "repo" (acceso completo)</li>
-                  <li>Copia el token generado</li>
-                </ol>
-              </div>
-              
-              <label className="block text-sm font-medium text-foreground mb-2">
-                GitHub Token
-              </label>
-              <input
-                type="password"
-                value={githubToken}
-                onChange={(e) => setGithubToken(e.target.value)}
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                El token se guarda localmente en tu navegador y nunca se comparte.
-              </p>
-            </div>
-            
-            <div className="flex gap-3">
-              <button
-                onClick={handleSaveToken}
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-              >
-                Guardar Token
-              </button>
-              <button
-                onClick={() => setShowTokenModal(false)}
-                className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+
     </div>
   );
 };

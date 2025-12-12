@@ -25,12 +25,24 @@ const GITHUB_GRAPHQL = 'https://api.github.com/graphql';
 // This will be used for reading discussions only
 const PUBLIC_GITHUB_TOKEN = 'github_pat_public_readonly'; // Placeholder - needs to be configured
 
-// Check if Firebase is properly configured
-const isFirebaseConfigured = () => {
+// Helper function to generate safe email key for guest book
+const getGuestEmailKey = (message) => {
   try {
-    return db !== null && db !== undefined;
+    if (!message) return null;
+    
+    // Check if has valid email
+    if (message.email && typeof message.email === 'string' && message.email.trim() !== '') {
+      return message.email.toLowerCase();
+    }
+    
+    // Generate placeholder email from name and id
+    const name = (message.name || 'anonymous').toLowerCase().replace(/\s+/g, '-');
+    const id = message.id || Date.now();
+    
+    return `guest-${name}-${id}@placeholder.com`;
   } catch (error) {
-    return false;
+    console.error('Error generating guest email key:', error);
+    return null;
   }
 };
 
@@ -208,15 +220,20 @@ export const addMessage = async (newMessage) => {
   
   // Try to sync to Firebase in background
   try {
-    const firebaseId = await saveMessageToFirebaseDB(messageWithId);
-    if (firebaseId) {
-      console.log('✓ Message synced to Firebase');
-      // Update local copy with Firebase ID
-      messageWithId.firebaseId = firebaseId;
-      const withFirebaseId = updatedMessages.map(m => 
-        m.id === messageWithId.id ? messageWithId : m
-      );
-      saveMessages(withFirebaseId);
+    if (isFirebaseConfigured()) {
+      const emailKey = getGuestEmailKey(messageWithId);
+      if (emailKey) {
+        await addDoc(collection(db, FIREBASE_COLLECTION), {
+          id: messageWithId.id,
+          name: messageWithId.name || '',
+          email: emailKey,
+          message: messageWithId.message || '',
+          date: Timestamp.fromDate(new Date(messageWithId.date)),
+          likes: 0,
+          language: messageWithId.language || 'es'
+        });
+        console.log('✓ Message synced to Firebase');
+      }
     }
   } catch (error) {
     console.warn('Failed to sync message to Firebase:', error);
@@ -251,11 +268,20 @@ export const updateMessage = async (messageId, updates) => {
   
   const updatedMessage = updatedMessages.find(msg => msg.id === messageId);
   
-  // Try to sync to Firebase if firebaseId exists
-  if (updatedMessage && updatedMessage.firebaseId) {
+  // Try to sync to Firebase
+  if (updatedMessage && isFirebaseConfigured()) {
     try {
-      await updateMessageInFirebase(updatedMessage.firebaseId, updates);
-      console.log('✓ Message updated in Firebase');
+      const emailKey = getGuestEmailKey(updatedMessage);
+      if (emailKey) {
+        const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const docRef = querySnapshot.docs[0].ref;
+          await updateDoc(docRef, updates);
+          console.log('✓ Message updated in Firebase');
+        }
+      }
     } catch (error) {
       console.warn('Failed to update in Firebase:', error);
     }
@@ -284,16 +310,24 @@ const deleteMessageFromFirebase = async (firebaseId) => {
 export const deleteMessage = async (messageId) => {
   const messages = loadMessagesFromLocalStorage();
   const messageToDelete = messages.find(m => m.id === messageId);
-  const firebaseId = messageToDelete?.firebaseId;
   
   const updatedMessages = messages.filter(msg => msg.id !== messageId);
   saveMessages(updatedMessages);
   
-  // Try to delete from Firebase if firebaseId exists
-  if (firebaseId) {
+  // Try to delete from Firebase
+  if (messageToDelete && isFirebaseConfigured()) {
     try {
-      await deleteMessageFromFirebase(firebaseId);
-      console.log('✓ Message deleted from Firebase');
+      const emailKey = getGuestEmailKey(messageToDelete);
+      if (emailKey) {
+        const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const docRef = querySnapshot.docs[0].ref;
+          await deleteDoc(docRef);
+          console.log('✓ Message deleted from Firebase');
+        }
+      }
     } catch (error) {
       console.warn('Failed to delete from Firebase:', error);
     }

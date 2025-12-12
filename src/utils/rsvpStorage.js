@@ -29,6 +29,28 @@ const isFirebaseConfigured = () => {
   }
 };
 
+// Helper function to generate safe email key
+const getEmailKey = (rsvp) => {
+  try {
+    if (!rsvp) return null;
+    
+    // Check if has valid email
+    if (rsvp.email && typeof rsvp.email === 'string' && rsvp.email.trim() !== '' && !rsvp.email.includes('@placeholder.com')) {
+      return rsvp.email.toLowerCase();
+    }
+    
+    // Generate placeholder email
+    const firstName = (rsvp.firstName || '').toLowerCase().replace(/\s+/g, '-');
+    const lastName = (rsvp.lastName || '').toLowerCase().replace(/\s+/g, '-');
+    const id = rsvp.id || Date.now();
+    
+    return `no-email-${firstName}-${lastName}-${id}@placeholder.com`;
+  } catch (error) {
+    console.error('Error generating email key:', error);
+    return null;
+  }
+};
+
 // Load RSVPs from Firebase
 export const loadRSVPsFromFirebase = async () => {
   if (!isFirebaseConfigured()) {
@@ -37,12 +59,16 @@ export const loadRSVPsFromFirebase = async () => {
   }
 
   try {
+    console.log('🔍 Querying Firestore collection:', FIREBASE_COLLECTION);
     const q = query(collection(db, FIREBASE_COLLECTION), orderBy('submittedAt', 'desc'));
     const querySnapshot = await getDocs(q);
+    
+    console.log('📦 Firestore query returned', querySnapshot.size, 'documents');
     
     const rsvps = [];
     querySnapshot.forEach((doc) => {
       const data = doc.data();
+      console.log('📄 Document ID:', doc.id, 'Email:', data.email, 'Submitted:', data.submittedAt);
       rsvps.push({
         ...data,
         id: data.id || doc.id, // Prefer stored id, fallback to doc id
@@ -54,7 +80,8 @@ export const loadRSVPsFromFirebase = async () => {
     
     return rsvps;
   } catch (error) {
-    console.error('Error loading RSVPs from Firebase:', error);
+    console.error('❌ Error loading RSVPs from Firebase:', error);
+    console.error('Error code:', error.code, 'Message:', error.message);
     return [];
   }
 };
@@ -87,22 +114,127 @@ export const loadRSVPsWithSync = async () => {
   // Try to load from Firebase first
   if (isFirebaseConfigured()) {
     try {
+      console.log('🔄 Loading RSVPs from Firebase...');
       const firebaseRSVPs = await loadRSVPsFromFirebase();
+      console.log('📊 Firebase returned:', firebaseRSVPs.length, 'RSVPs');
+      
       if (firebaseRSVPs.length > 0) {
+        // Log first RSVP for debugging
+        console.log('📝 First Firebase RSVP:', {
+          email: firebaseRSVPs[0].email,
+          submittedAt: firebaseRSVPs[0].submittedAt,
+          firebaseId: firebaseRSVPs[0].firebaseId
+        });
+        
         console.log('✓ Loaded', firebaseRSVPs.length, 'RSVPs from Firebase');
         // Merge with localStorage
         const localRSVPs = loadRSVPsFromLocalStorage();
+        console.log('💾 localStorage had:', localRSVPs.length, 'RSVPs');
+        
         const merged = mergeRSVPs(localRSVPs, firebaseRSVPs);
+        console.log('🔀 Merged result:', merged.length, 'RSVPs');
+        
         saveRSVPs(merged); // Save to localStorage as cache
         return merged;
+      } else {
+        console.warn('⚠️ Firebase returned 0 RSVPs, using localStorage');
       }
     } catch (err) {
-      console.warn('Failed to load from Firebase, using localStorage:', err);
+      console.error('❌ Failed to load from Firebase:', err);
+      console.error('Error details:', err.message, err.code);
     }
+  } else {
+    console.warn('⚠️ Firebase not configured, using localStorage only');
   }
   
   // Fallback to localStorage
-  return loadRSVPsFromLocalStorage();
+  const localRSVPs = loadRSVPsFromLocalStorage();
+  console.log('💾 Using localStorage:', localRSVPs.length, 'RSVPs');
+  return localRSVPs;
+};
+
+// Migrate all localStorage RSVPs to Firebase (force overwrite mode)
+export const migrateLocalStorageToFirebase = async (forceOverwrite = false) => {
+  if (!isFirebaseConfigured()) {
+    throw new Error('Firebase not configured');
+  }
+
+  const localRSVPs = loadRSVPsFromLocalStorage();
+  console.log('🚀 Starting migration of', localRSVPs.length, 'RSVPs to Firebase');
+  console.log('📋 Mode:', forceOverwrite ? 'FORCE OVERWRITE (will update existing)' : 'Skip existing');
+  
+  let successCount = 0;
+  let updatedCount = 0;
+  let skippedCount = 0;
+  let errorCount = 0;
+  const errors = [];
+
+  for (const rsvp of localRSVPs) {
+    try {
+      const emailKey = getEmailKey(rsvp);
+      if (!emailKey) {
+        console.warn('⏭️  Skipped (invalid data):', rsvp);
+        skippedCount++;
+        continue;
+      }
+      
+      // Check if already exists in Firebase
+      const q = query(
+        collection(db, FIREBASE_COLLECTION), 
+        where('email', '==', emailKey)
+      );
+      const querySnapshot = await getDocs(q);
+      
+      // Sanitize data for Firebase
+      const sanitizedData = {
+        id: rsvp.id || Date.now(),
+        firstName: rsvp.firstName || '',
+        lastName: rsvp.lastName || '',
+        email: emailKey,
+        phone: rsvp.phone || '',
+        attendance: rsvp.attendance || 'no',
+        language: rsvp.language || 'es',
+        dietaryRestrictions: rsvp.dietaryRestrictions || '',
+        needsWheelchairAccess: rsvp.needsWheelchairAccess === true,
+        needsHearingAssistance: rsvp.needsHearingAssistance === true,
+        needsVisualAssistance: rsvp.needsVisualAssistance === true,
+        needsTransportation: rsvp.needsTransportation === true,
+        needsAccommodation: rsvp.needsAccommodation === true,
+        specialNotes: rsvp.specialNotes || '',
+        approved: rsvp.approved === true,
+        hasPlusOne: rsvp.hasPlusOne === true,
+        plusOneFirstName: rsvp.plusOneFirstName || '',
+        plusOneLastName: rsvp.plusOneLastName || '',
+        submittedAt: rsvp.submittedAt ? Timestamp.fromDate(new Date(rsvp.submittedAt)) : Timestamp.now()
+      };
+      
+      if (querySnapshot.empty) {
+        // Create new document in Firebase
+        await addDoc(collection(db, FIREBASE_COLLECTION), sanitizedData);
+        successCount++;
+        console.log('✓ Created:', rsvp.email);
+      } else if (forceOverwrite) {
+        // Update existing document
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, {
+          ...sanitizedData,
+          updatedAt: Timestamp.now()
+        });
+        updatedCount++;
+        console.log('✓ Updated:', rsvp.email);
+      } else {
+        skippedCount++;
+        console.log('⏭️  Skipped (already exists):', rsvp.email);
+      }
+    } catch (error) {
+      errorCount++;
+      errors.push({ email: rsvp.email, error: error.message });
+      console.error('❌ Error migrating:', rsvp.email, error);
+    }
+  }
+
+  console.log('✅ Migration complete:', successCount, 'created,', updatedCount, 'updated,', skippedCount, 'skipped,', errorCount, 'errors');
+  return { successCount, updatedCount, skippedCount, errorCount, errors };
 };
 
 // Load RSVPs from localStorage (with Firebase sync in background)
@@ -260,9 +392,15 @@ const saveRSVPToFirebase = async (rsvpData) => {
 export const addRSVP = async (rsvpData) => {
   const rsvps = loadRSVPs();
   
+  // Validate email
+  if (!rsvpData.email || typeof rsvpData.email !== 'string' || rsvpData.email.trim() === '') {
+    throw new Error('Email is required');
+  }
+  
   // Check if an RSVP with the same email already exists
+  const userEmail = rsvpData.email.toLowerCase().trim();
   const existingIndex = rsvps.findIndex(r => 
-    r.email.toLowerCase() === rsvpData.email.toLowerCase()
+    r.email && typeof r.email === 'string' && r.email.toLowerCase().trim() === userEmail
   );
   
   let localResult;
@@ -453,12 +591,22 @@ export const toggleRSVPApproval = async (rsvpId) => {
   });
   saveRSVPs(updatedRSVPs);
   
-  // Try to sync to Firebase if firebaseId exists
+  // Sync to Firebase by email
   const updatedRSVP = updatedRSVPs.find(r => r.id === rsvpId);
-  if (updatedRSVP && updatedRSVP.firebaseId) {
+  if (updatedRSVP && isFirebaseConfigured()) {
     try {
-      await updateRSVPInFirebase(updatedRSVP.firebaseId, { approved: updatedRSVP.approved });
-      console.log('✓ Approval status synced to Firebase');
+      const emailKey = (updatedRSVP.email && updatedRSVP.email.trim() !== '' && !updatedRSVP.email.includes('@placeholder.com')) 
+        ? updatedRSVP.email.toLowerCase()
+        : `no-email-${updatedRSVP.firstName.toLowerCase()}-${updatedRSVP.lastName.toLowerCase()}-${updatedRSVP.id}@placeholder.com`;
+      
+      const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, { approved: updatedRSVP.approved });
+        console.log('✓ Approval status synced to Firebase:', emailKey);
+      }
     } catch (error) {
       console.warn('Failed to sync approval to Firebase:', error);
     }
@@ -497,12 +645,22 @@ export const updateRSVP = async (rsvpId, updates) => {
   });
   saveRSVPs(updatedRSVPs);
   
-  // Try to sync to Firebase if firebaseId exists
+  // Sync to Firebase by email
   const updatedRSVP = updatedRSVPs.find(r => r.id === rsvpId);
-  if (updatedRSVP && updatedRSVP.firebaseId) {
+  if (updatedRSVP && isFirebaseConfigured()) {
     try {
-      await updateRSVPInFirebase(updatedRSVP.firebaseId, updates);
-      console.log('✓ RSVP updated in Firebase');
+      const emailKey = (updatedRSVP.email && updatedRSVP.email.trim() !== '' && !updatedRSVP.email.includes('@placeholder.com')) 
+        ? updatedRSVP.email.toLowerCase()
+        : `no-email-${updatedRSVP.firstName.toLowerCase()}-${updatedRSVP.lastName.toLowerCase()}-${updatedRSVP.id}@placeholder.com`;
+      
+      const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await updateDoc(docRef, updates);
+        console.log('✓ RSVP updated in Firebase:', emailKey);
+      }
     } catch (error) {
       console.warn('Failed to update in Firebase:', error);
     }
@@ -531,16 +689,27 @@ const deleteRSVPFromFirebase = async (firebaseId) => {
 export const deleteRSVP = async (rsvpId) => {
   const rsvps = loadRSVPs();
   const rsvpToDelete = rsvps.find(r => r.id === rsvpId);
-  const firebaseId = rsvpToDelete?.firebaseId;
   
   const updatedRSVPs = rsvps.filter(rsvp => rsvp.id !== rsvpId);
   saveRSVPs(updatedRSVPs);
   
-  // Try to delete from Firebase if firebaseId exists
-  if (firebaseId) {
+  // Delete from Firebase by email
+  if (rsvpToDelete && isFirebaseConfigured()) {
     try {
-      await deleteRSVPFromFirebase(firebaseId);
-      console.log('✓ RSVP deleted from Firebase');
+      const emailKey = getEmailKey(rsvpToDelete);
+      if (!emailKey) {
+        console.warn('Cannot delete from Firebase: invalid email key');
+        return updatedRSVPs;
+      }
+      
+      const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+      const querySnapshot = await getDocs(q);
+      
+      if (!querySnapshot.empty) {
+        const docRef = querySnapshot.docs[0].ref;
+        await deleteDoc(docRef);
+        console.log('✓ RSVP deleted from Firebase:', emailKey);
+      }
     } catch (error) {
       console.warn('Failed to delete from Firebase:', error);
     }
@@ -683,11 +852,125 @@ export const importRSVPsFromCSV = (csvContent) => {
     
     saveRSVPs(mergedRSVPs);
 
-    return { success: true, count: newRSVPs.length, updated: updatedCount, added: addedCount };
+    return { 
+      success: true, 
+      count: newRSVPs.length, 
+      updated: updatedCount, 
+      added: addedCount,
+      rsvps: mergedRSVPs // Return the merged data for Firebase sync
+    };
   } catch (error) {
     console.error('Error importing CSV:', error);
     return { success: false, error: error.message };
   }
+};
+
+// Import RSVPs from CSV and sync to Firebase
+export const importRSVPsFromCSVWithFirebase = async (csvContent) => {
+  // First import to localStorage
+  const result = importRSVPsFromCSV(csvContent);
+  
+  if (!result.success) {
+    return result;
+  }
+
+  // If Firebase is configured, sync all RSVPs
+  if (isFirebaseConfigured()) {
+    console.log('🔄 Syncing', result.rsvps.length, 'imported RSVPs to Firebase...');
+    
+    let firebaseSuccessCount = 0;
+    let firebaseErrorCount = 0;
+    const errors = [];
+    
+    // Process in smaller batches to avoid rate limits
+    const batchSize = 10;
+    const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+    
+    for (let i = 0; i < result.rsvps.length; i++) {
+      const rsvp = result.rsvps[i];
+      
+      try {
+        const emailKey = getEmailKey(rsvp);
+        if (!emailKey) {
+          console.warn(`⏭️  [${i + 1}/${result.rsvps.length}] Skipped (invalid data):`, rsvp);
+          continue;
+        }
+        
+        console.log(`[${i + 1}/${result.rsvps.length}] Processing:`, emailKey);
+        
+        // Check if exists in Firebase
+        const q = query(
+          collection(db, FIREBASE_COLLECTION), 
+          where('email', '==', emailKey)
+        );
+        const querySnapshot = await getDocs(q);
+        
+        // Sanitize data for Firebase (remove undefined, convert dates properly)
+        const sanitizedData = {
+          id: rsvp.id || Date.now(),
+          firstName: rsvp.firstName || '',
+          lastName: rsvp.lastName || '',
+          email: emailKey,
+          phone: rsvp.phone || '',
+          attendance: rsvp.attendance || 'no',
+          language: rsvp.language || 'es',
+          dietaryRestrictions: rsvp.dietaryRestrictions || '',
+          needsWheelchairAccess: rsvp.needsWheelchairAccess === true,
+          needsHearingAssistance: rsvp.needsHearingAssistance === true,
+          needsVisualAssistance: rsvp.needsVisualAssistance === true,
+          needsTransportation: rsvp.needsTransportation === true,
+          needsAccommodation: rsvp.needsAccommodation === true,
+          specialNotes: rsvp.specialNotes || '',
+          approved: rsvp.approved === true,
+          hasPlusOne: rsvp.hasPlusOne === true,
+          plusOneFirstName: rsvp.plusOneFirstName || '',
+          plusOneLastName: rsvp.plusOneLastName || '',
+          submittedAt: rsvp.submittedAt ? Timestamp.fromDate(new Date(rsvp.submittedAt)) : Timestamp.now()
+        };
+        
+        if (querySnapshot.empty) {
+          // Create new
+          await addDoc(collection(db, FIREBASE_COLLECTION), sanitizedData);
+          console.log('✓ Created:', rsvp.email);
+          firebaseSuccessCount++;
+        } else {
+          // Update existing
+          const docRef = querySnapshot.docs[0].ref;
+          await updateDoc(docRef, {
+            ...sanitizedData,
+            updatedAt: Timestamp.now()
+          });
+          console.log('✓ Updated:', rsvp.email);
+          firebaseSuccessCount++;
+        }
+        
+        // Add delay every batch to avoid rate limits
+        if ((i + 1) % batchSize === 0) {
+          console.log(`⏸️  Pausing after ${i + 1} records...`);
+          await delay(1000); // 1 second pause every 10 records
+        }
+        
+      } catch (error) {
+        console.error('❌ Error syncing:', rsvp.email, error.message);
+        errors.push({ email: rsvp.email, error: error.message });
+        firebaseErrorCount++;
+      }
+    }
+    
+    console.log(`✅ Firebase sync complete: ${firebaseSuccessCount} synced, ${firebaseErrorCount} errors`);
+    if (errors.length > 0) {
+      console.error('Errors details:', errors);
+    }
+    
+    return {
+      ...result,
+      firebaseSynced: firebaseSuccessCount,
+      firebaseErrors: firebaseErrorCount,
+      errors: errors
+    };
+  }
+  
+  return result;
 };
 
 // Clear all RSVPs (for resetting)

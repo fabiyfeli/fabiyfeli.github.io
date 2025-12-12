@@ -1,0 +1,38 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Reglas para RSVPs
+    match /rsvps/{rsvpId} {
+      // Cualquiera puede CREAR un RSVP (formulario público)
+      allow create: if request.resource.data.email is string 
+                    && request.resource.data.email.size() > 0;
+      
+      // Permitir LEER todos los RSVPs (para admin panel)
+      // En producción, podrías agregar autenticación aquí
+      allow read: if true;
+      
+      // Permitir ACTUALIZAR y ELIMINAR (para admin panel)
+      // En producción, deberías agregar autenticación
+      allow update, delete: if true;
+    }
+    
+    // Reglas para Libro de Invitados
+    match /guestBook/{messageId} {
+      // Cualquiera puede CREAR mensajes (máximo 500 caracteres)
+      allow create: if request.resource.data.name is string
+                    && request.resource.data.name.size() > 0
+                    && request.resource.data.name.size() <= 100
+                    && request.resource.data.message is string
+                    && request.resource.data.message.size() > 0
+                    && request.resource.data.message.size() <= 500;
+      
+      // Permitir LEER todos los mensajes (para admin panel)
+      allow read: if true;
+      
+      // Permitir ACTUALIZAR y ELIMINAR (para admin panel)
+      allow update, delete: if true;
+    }
+  }
+}
