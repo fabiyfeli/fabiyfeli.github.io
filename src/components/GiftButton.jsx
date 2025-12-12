@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import Icon from './AppIcon';
+import { useLanguage } from '../context/LanguageContext';
 
-const GiftButton = ({ language = 'es' } = {}) => {
+const GiftButton = ({ language } = {}) => {
+  const { language: contextLanguage } = useLanguage();
   const [showModal, setShowModal] = useState(false);
   const [scrollY, setScrollY] = useState(0);
   const [expandedBank, setExpandedBank] = useState(false);
+  const currentLanguage = language || contextLanguage || 'es';
 
   useEffect(() => {
     const handleScroll = () => {
@@ -15,7 +18,7 @@ const GiftButton = ({ language = 'es' } = {}) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const giftInfo = language === 'es' 
+  const giftInfo = currentLanguage === 'es'
     ? {
         title: "Regalos",
         subtitle: "¡Tu presencia es lo más importante!",
@@ -108,7 +111,7 @@ const GiftButton = ({ language = 'es' } = {}) => {
           transform: 'translateY(-50%)',
           animation: 'tilt 2s ease-in-out infinite'
         }}
-        title={language === 'es' ? 'Regalos' : 'Gifts'}
+        title={currentLanguage === 'es' ? 'Regalos' : 'Gifts'}
       >
         <span>🎁</span>
       </button>
@@ -212,7 +215,7 @@ const GiftButton = ({ language = 'es' } = {}) => {
               onClick={() => setShowModal(false)}
               className="w-full px-4 py-3 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium active:scale-95"
             >
-              {language === 'es' ? 'Cerrar' : 'Close'}
+              {currentLanguage === 'es' ? 'Cerrar' : 'Close'}
             </button>
           </div>
         </div>
