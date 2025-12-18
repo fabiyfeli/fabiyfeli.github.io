@@ -46,6 +46,15 @@ const getGuestEmailKey = (message) => {
   }
 };
 
+// Check if Firebase is configured
+const isFirebaseConfigured = () => {
+  try {
+    return db && db !== undefined;
+  } catch {
+    return false;
+  }
+};
+
 // Load messages from Firebase
 export const loadMessagesFromFirebase = async () => {
   if (!isFirebaseConfigured()) {
@@ -219,11 +228,13 @@ export const addMessage = async (newMessage) => {
   saveMessages(updatedMessages);
   
   // Try to sync to Firebase in background
-  try {
-    if (isFirebaseConfigured()) {
+  if (isFirebaseConfigured()) {
+    try {
+      console.log('🔄 Attempting to sync message to Firebase...');
       const emailKey = getGuestEmailKey(messageWithId);
       if (emailKey) {
-        await addDoc(collection(db, FIREBASE_COLLECTION), {
+        console.log('📝 Adding to Firebase with email:', emailKey);
+        const docRef = await addDoc(collection(db, FIREBASE_COLLECTION), {
           id: messageWithId.id,
           name: messageWithId.name || '',
           email: emailKey,
@@ -232,11 +243,17 @@ export const addMessage = async (newMessage) => {
           likes: 0,
           language: messageWithId.language || 'es'
         });
-        console.log('✓ Message synced to Firebase');
+        console.log('✓ Message synced to Firebase with ID:', docRef.id);
+      } else {
+        console.warn('⚠️ Could not generate email key for guest');
       }
+    } catch (error) {
+      console.error('❌ Failed to sync message to Firebase:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
     }
-  } catch (error) {
-    console.warn('Failed to sync message to Firebase:', error);
+  } else {
+    console.warn('⚠️ Firebase not configured, message saved to localStorage only');
   }
   
   return messageWithId;
@@ -326,10 +343,13 @@ export const deleteMessage = async (messageId) => {
           const docRef = querySnapshot.docs[0].ref;
           await deleteDoc(docRef);
           console.log('✓ Message deleted from Firebase');
+        } else {
+          console.warn('⚠️ Message not found in Firebase for deletion:', emailKey);
         }
       }
     } catch (error) {
-      console.warn('Failed to delete from Firebase:', error);
+      console.error('❌ Failed to delete from Firebase:', error);
+      throw error; // Re-throw so caller knows about sync failures
     }
   }
   

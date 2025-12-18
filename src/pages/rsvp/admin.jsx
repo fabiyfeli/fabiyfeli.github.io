@@ -26,7 +26,7 @@ const RSVPAdmin = () => {
   const [password, setPassword] = useState('');
   const [rsvps, setRsvps] = useState([]);
   const [stats, setStats] = useState(null);
-  const [filter, setFilter] = useState('all'); // all, attending, notAttending
+  const [filter, setFilter] = useState('all'); // all, attending, notAttendingApproved, notAttendingPending, pending, approved
   const [searchTerm, setSearchTerm] = useState('');
   const [editingField, setEditingField] = useState(null); // { rsvpId, field }
   const [editValue, setEditValue] = useState('');
@@ -199,7 +199,9 @@ const RSVPAdmin = () => {
 
   const handleToggleApproval = async (rsvpId) => {
     await toggleRSVPApproval(rsvpId);
-    loadData();
+    // Wait a moment for Firebase to sync before reloading
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await loadData();
   };
 
   const handleToggleAttendance = async (rsvpId) => {
@@ -207,7 +209,9 @@ const RSVPAdmin = () => {
     if (rsvp) {
       const newAttendance = rsvp.attendance === 'yes' ? 'no' : 'yes';
       await updateRSVP(rsvpId, { attendance: newAttendance });
-      loadData();
+      // Wait a moment for Firebase to sync before reloading
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadData();
     }
   };
 
@@ -226,14 +230,18 @@ const RSVPAdmin = () => {
       await updateRSVP(editingField.rsvpId, { [editingField.field]: editValue });
       setEditingField(null);
       setEditValue('');
-      loadData();
+      // Wait a moment for Firebase to sync before reloading
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadData();
     }
   };
 
   const handleDelete = async (rsvpId, guestName) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar la confirmación de ${guestName}?`)) {
       await deleteRSVP(rsvpId);
-      loadData();
+      // Wait a moment for Firebase to sync before reloading
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadData();
     }
   };
 
@@ -298,11 +306,13 @@ const RSVPAdmin = () => {
       if (filter === 'all') {
         matchesFilter = true;
       } else if (filter === 'attending') {
-        matchesFilter = rsvp.attendance === 'yes';
-      } else if (filter === 'notAttending') {
-        matchesFilter = rsvp.attendance === 'no';
+        matchesFilter = rsvp.attendance === 'yes' && rsvp.approved === true;
+      } else if (filter === 'notAttendingApproved') {
+        matchesFilter = rsvp.attendance === 'no' && rsvp.approved === true;
+      } else if (filter === 'notAttendingPending') {
+        matchesFilter = rsvp.attendance === 'no' && rsvp.approved === false;
       } else if (filter === 'pending') {
-        matchesFilter = rsvp.approved === false;
+        matchesFilter = rsvp.approved === false && rsvp.attendance !== 'no';
       } else if (filter === 'approved') {
         matchesFilter = rsvp.approved === true;
       }
@@ -404,7 +414,7 @@ const RSVPAdmin = () => {
 
             {/* Stats Cards */}
             {stats && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
                 <div className="bg-card rounded-xl p-6 border border-border">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-muted-foreground text-sm">Total Respuestas</span>
@@ -421,13 +431,6 @@ const RSVPAdmin = () => {
                 </div>
                 <div className="bg-card rounded-xl p-6 border border-border">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-muted-foreground text-sm">Aprobados</span>
-                    <Icon name="CheckCircle2" className="w-5 h-5 text-blue-600" />
-                  </div>
-                  <div className="text-3xl font-bold text-blue-600">{stats.approved}</div>
-                </div>
-                <div className="bg-card rounded-xl p-6 border border-border">
-                  <div className="flex items-center justify-between mb-2">
                     <span className="text-muted-foreground text-sm">Asistirán</span>
                     <Icon name="Check" className="w-5 h-5 text-green-600" />
                   </div>
@@ -436,13 +439,30 @@ const RSVPAdmin = () => {
                 </div>
                 <div className="bg-card rounded-xl p-6 border border-border">
                   <div className="flex items-center justify-between mb-2">
+                    <span className="text-muted-foreground text-sm">No Asistirán</span>
+                    <Icon name="X" className="w-5 h-5 text-red-600" />
+                  </div>
+                  <div className="text-3xl font-bold text-red-600">{stats.notAttendingTotal}</div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {stats.notAttendingApproved} apr. / {stats.notAttendingPending} pend.
+                  </p>
+                </div>
+                <div className="bg-card rounded-xl p-6 border border-border">
+                  <div className="flex items-center justify-between mb-2">
                     <span className="text-muted-foreground text-sm">Total Invitados</span>
                     <Icon name="UserPlus" className="w-5 h-5 text-primary" />
                   </div>
                   <div className="text-3xl font-bold">{stats.totalGuests}</div>
                   <p className="text-xs text-muted-foreground mt-1">
-                    Incluyendo acompañantes
+                    Que asistirán
                   </p>
+                </div>
+                <div className="bg-card rounded-xl p-6 border border-border">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-muted-foreground text-sm">Aprobados</span>
+                    <Icon name="CheckCircle2" className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div className="text-3xl font-bold text-blue-600">{stats.approved}</div>
                 </div>
               </div>
             )}
@@ -500,14 +520,24 @@ const RSVPAdmin = () => {
                   Asistirán
                 </button>
                 <button
-                  onClick={() => setFilter('notAttending')}
+                  onClick={() => setFilter('notAttendingApproved')}
                   className={`px-4 py-2 rounded-lg transition-colors ${
-                    filter === 'notAttending'
+                    filter === 'notAttendingApproved'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-card border border-border hover:bg-muted'
                   }`}
                 >
-                  No Asistirán
+                  No Asistirán (Apr)
+                </button>
+                <button
+                  onClick={() => setFilter('notAttendingPending')}
+                  className={`px-4 py-2 rounded-lg transition-colors ${
+                    filter === 'notAttendingPending'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-card border border-border hover:bg-muted'
+                  }`}
+                >
+                  No Asistirán (Pend)
                 </button>
               </div>
             </div>
@@ -667,6 +697,14 @@ const RSVPAdmin = () => {
                                   Pendiente
                                 </span>
                               )}
+                              <span className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full ${
+                                rsvp.attendance === 'yes'
+                                  ? 'bg-emerald-100 text-emerald-700'
+                                  : 'bg-rose-100 text-rose-700'
+                              }`}>
+                                <Icon name={rsvp.attendance === 'yes' ? 'Check' : 'X'} className="w-3 h-3" />
+                                {rsvp.attendance === 'yes' ? 'Asistirá' : 'No Asistirá'}
+                              </span>
                             </div>
                             <div className="flex flex-wrap gap-3 text-sm text-muted-foreground">
                               <span className="flex items-center gap-1">

@@ -348,16 +348,19 @@ export const saveRSVPs = (rsvps) => {
 };
 
 // Save RSVP to Firebase
-const saveRSVPToFirebase = async (rsvpData) => {
+const saveRSVPToFirebase = async (rsvpData, oldEmail = null) => {
   if (!isFirebaseConfigured()) {
     return null;
   }
 
   try {
-    // Check if RSVP with same email exists
+    // If updating (oldEmail provided), search by old email to find existing record
+    // Otherwise search by current email (could be new or email didn't change)
+    const searchEmail = oldEmail ? oldEmail.toLowerCase() : rsvpData.email.toLowerCase();
+    
     const q = query(
       collection(db, FIREBASE_COLLECTION), 
-      where('email', '==', rsvpData.email.toLowerCase())
+      where('email', '==', searchEmail)
     );
     const querySnapshot = await getDocs(q);
     
@@ -366,6 +369,7 @@ const saveRSVPToFirebase = async (rsvpData) => {
       const docRef = querySnapshot.docs[0].ref;
       await updateDoc(docRef, {
         ...rsvpData,
+        email: rsvpData.email.toLowerCase(),
         updatedAt: Timestamp.now(),
         approved: false,
         previouslyApproved: querySnapshot.docs[0].data().approved || false
@@ -373,9 +377,10 @@ const saveRSVPToFirebase = async (rsvpData) => {
       return { id: docRef.id, isUpdate: true };
     } else {
       // Create new - include the local id so we can match later
+      const rsvpId = rsvpData.id || Date.now().toString();
       const docRef = await addDoc(collection(db, FIREBASE_COLLECTION), {
         ...rsvpData,
-        id: rsvpData.id, // Store local ID for reference
+        id: rsvpId, // Store local ID for reference (generate if not provided)
         email: rsvpData.email.toLowerCase(),
         submittedAt: Timestamp.now(),
         approved: false
@@ -404,10 +409,12 @@ export const addRSVP = async (rsvpData) => {
   );
   
   let localResult;
+  let oldEmail = null; // Track the old email for Firebase update
   
   if (existingIndex !== -1) {
     // Update existing RSVP
     const existingRSVP = rsvps[existingIndex];
+    oldEmail = existingRSVP.email; // Save old email before updating
     const updatedRSVP = {
       ...existingRSVP,
       ...rsvpData,
@@ -445,7 +452,7 @@ export const addRSVP = async (rsvpData) => {
   
   // Try to sync to Firebase in background
   try {
-    const firebaseResult = await saveRSVPToFirebase(rsvpData);
+    const firebaseResult = await saveRSVPToFirebase(rsvpData, oldEmail);
     if (firebaseResult) {
       console.log('✓ RSVP synced to Firebase');
     }
@@ -460,10 +467,12 @@ export const addRSVP = async (rsvpData) => {
 export const getRSVPStats = () => {
   const rsvps = loadRSVPs();
   const approvedRSVPs = rsvps.filter(r => r.approved === true);
+  const pendingRSVPs = rsvps.filter(r => !r.approved);
   
   const attending = approvedRSVPs.filter(r => r.attendance === 'yes');
-  const notAttending = approvedRSVPs.filter(r => r.attendance === 'no');
-  const pending = rsvps.filter(r => !r.approved);
+  const notAttendingApproved = approvedRSVPs.filter(r => r.attendance === 'no');
+  const notAttendingPending = pendingRSVPs.filter(r => r.attendance === 'no');
+  const pending = pendingRSVPs.filter(r => r.attendance !== 'no');
   
   let totalGuests = 0;
   attending.forEach(rsvp => {
@@ -478,7 +487,9 @@ export const getRSVPStats = () => {
     approved: approvedRSVPs.length,
     pending: pending.length,
     attending: attending.length,
-    notAttending: notAttending.length,
+    notAttendingApproved: notAttendingApproved.length,
+    notAttendingPending: notAttendingPending.length,
+    notAttendingTotal: notAttendingApproved.length + notAttendingPending.length,
     totalGuests: totalGuests
   };
 };
@@ -591,24 +602,43 @@ export const toggleRSVPApproval = async (rsvpId) => {
   });
   saveRSVPs(updatedRSVPs);
   
-  // Sync to Firebase by email
+  // Sync to Firebase (best effort)
   const updatedRSVP = updatedRSVPs.find(r => r.id === rsvpId);
   if (updatedRSVP && isFirebaseConfigured()) {
     try {
-      const emailKey = (updatedRSVP.email && updatedRSVP.email.trim() !== '' && !updatedRSVP.email.includes('@placeholder.com')) 
-        ? updatedRSVP.email.toLowerCase()
-        : `no-email-${updatedRSVP.firstName.toLowerCase()}-${updatedRSVP.lastName.toLowerCase()}-${updatedRSVP.id}@placeholder.com`;
-      
-      const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
-        await updateDoc(docRef, { approved: updatedRSVP.approved });
-        console.log('✓ Approval status synced to Firebase:', emailKey);
+      console.log('🔄 Syncing approval to Firebase...');
+      // Try using firebaseId first (most reliable)
+      if (updatedRSVP.firebaseId) {
+        const docRef = doc(db, FIREBASE_COLLECTION, updatedRSVP.firebaseId);
+        await updateDoc(docRef, { 
+          approved: updatedRSVP.approved,
+          updatedAt: Timestamp.now()
+        });
+        console.log('✓ Approval status synced to Firebase via firebaseId:', updatedRSVP.firebaseId);
+      } else {
+        // Fallback to email search
+        const emailKey = (updatedRSVP.email && updatedRSVP.email.trim() !== '' && !updatedRSVP.email.includes('@placeholder.com')) 
+          ? updatedRSVP.email.toLowerCase()
+          : `no-email-${updatedRSVP.firstName.toLowerCase()}-${updatedRSVP.lastName.toLowerCase()}-${updatedRSVP.id}@placeholder.com`;
+        
+        const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const docRef = querySnapshot.docs[0].ref;
+          await updateDoc(docRef, { 
+            approved: updatedRSVP.approved,
+            updatedAt: Timestamp.now()
+          });
+          console.log('✓ Approval status synced to Firebase via email:', emailKey);
+        } else {
+          console.warn('⚠️ RSVP not found in Firebase:', emailKey);
+        }
       }
     } catch (error) {
-      console.warn('Failed to sync approval to Firebase:', error);
+      console.error('❌ Failed to sync approval to Firebase:', error);
+      console.error('Error details:', error.code, error.message);
+      // Don't throw - local update already succeeded
     }
   }
   
@@ -645,24 +675,43 @@ export const updateRSVP = async (rsvpId, updates) => {
   });
   saveRSVPs(updatedRSVPs);
   
-  // Sync to Firebase by email
+  // Sync to Firebase (best effort)
   const updatedRSVP = updatedRSVPs.find(r => r.id === rsvpId);
   if (updatedRSVP && isFirebaseConfigured()) {
     try {
-      const emailKey = (updatedRSVP.email && updatedRSVP.email.trim() !== '' && !updatedRSVP.email.includes('@placeholder.com')) 
-        ? updatedRSVP.email.toLowerCase()
-        : `no-email-${updatedRSVP.firstName.toLowerCase()}-${updatedRSVP.lastName.toLowerCase()}-${updatedRSVP.id}@placeholder.com`;
-      
-      const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
-        await updateDoc(docRef, updates);
-        console.log('✓ RSVP updated in Firebase:', emailKey);
+      console.log('🔄 Syncing updates to Firebase...');
+      // Try using firebaseId first (most reliable)
+      if (updatedRSVP.firebaseId) {
+        const docRef = doc(db, FIREBASE_COLLECTION, updatedRSVP.firebaseId);
+        await updateDoc(docRef, {
+          ...updates,
+          updatedAt: Timestamp.now()
+        });
+        console.log('✓ RSVP updated in Firebase via firebaseId:', updatedRSVP.firebaseId);
+      } else {
+        // Fallback to email search
+        const emailKey = (updatedRSVP.email && updatedRSVP.email.trim() !== '' && !updatedRSVP.email.includes('@placeholder.com')) 
+          ? updatedRSVP.email.toLowerCase()
+          : `no-email-${updatedRSVP.firstName.toLowerCase()}-${updatedRSVP.lastName.toLowerCase()}-${updatedRSVP.id}@placeholder.com`;
+        
+        const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const docRef = querySnapshot.docs[0].ref;
+          await updateDoc(docRef, {
+            ...updates,
+            updatedAt: Timestamp.now()
+          });
+          console.log('✓ RSVP updated in Firebase via email:', emailKey);
+        } else {
+          console.warn('⚠️ RSVP not found in Firebase:', emailKey);
+        }
       }
     } catch (error) {
-      console.warn('Failed to update in Firebase:', error);
+      console.error('❌ Failed to update in Firebase:', error);
+      console.error('Error details:', error.code, error.message);
+      // Don't throw - local update already succeeded
     }
   }
   
@@ -693,25 +742,48 @@ export const deleteRSVP = async (rsvpId) => {
   const updatedRSVPs = rsvps.filter(rsvp => rsvp.id !== rsvpId);
   saveRSVPs(updatedRSVPs);
   
-  // Delete from Firebase by email
+  // Delete from Firebase (best effort - don't block if it fails)
   if (rsvpToDelete && isFirebaseConfigured()) {
     try {
-      const emailKey = getEmailKey(rsvpToDelete);
-      if (!emailKey) {
-        console.warn('Cannot delete from Firebase: invalid email key');
-        return updatedRSVPs;
-      }
+      console.log('🗑️ Attempting to delete from Firebase...');
+      console.log('RSVP to delete:', {
+        id: rsvpToDelete.id,
+        firebaseId: rsvpToDelete.firebaseId,
+        email: rsvpToDelete.email,
+        firstName: rsvpToDelete.firstName,
+        lastName: rsvpToDelete.lastName
+      });
       
-      const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
-      const querySnapshot = await getDocs(q);
-      
-      if (!querySnapshot.empty) {
-        const docRef = querySnapshot.docs[0].ref;
+      // Try using firebaseId first (most reliable)
+      if (rsvpToDelete.firebaseId) {
+        const docRef = doc(db, FIREBASE_COLLECTION, rsvpToDelete.firebaseId);
         await deleteDoc(docRef);
-        console.log('✓ RSVP deleted from Firebase:', emailKey);
+        console.log('✓ RSVP deleted from Firebase via firebaseId:', rsvpToDelete.firebaseId);
+      } else {
+        // Fallback to email search
+        const emailKey = getEmailKey(rsvpToDelete);
+        if (!emailKey) {
+          console.warn('Cannot delete from Firebase: invalid email key');
+          return updatedRSVPs;
+        }
+        
+        console.log('Searching Firebase by email:', emailKey);
+        const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          const docRef = querySnapshot.docs[0].ref;
+          await deleteDoc(docRef);
+          console.log('✓ RSVP deleted from Firebase via email:', emailKey);
+        } else {
+          console.warn('⚠️ RSVP not found in Firebase for deletion:', emailKey);
+        }
       }
     } catch (error) {
-      console.warn('Failed to delete from Firebase:', error);
+      console.error('❌ Failed to delete from Firebase:', error);
+      console.error('Error details:', error.code, error.message);
+      // Don't throw - the local delete already succeeded
+      // Just warn the user if needed
     }
   }
   

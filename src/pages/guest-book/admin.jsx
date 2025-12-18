@@ -8,9 +8,7 @@ import {
   exportMessagesToCSV,
   importMessagesFromCSV,
   clearAllMessages,
-  getGuestBookStats,
-  syncWithGitHub,
-  loadMessagesFromGitHub
+  getGuestBookStats
 } from '../../utils/guestBookStorage';
 import { checkAuth, setAuthSession, isAuthenticated } from '../../utils/rsvpStorage';
 
@@ -21,18 +19,11 @@ const GuestBookAdmin = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [showTokenModal, setShowTokenModal] = useState(false);
-  const [githubToken, setGithubToken] = useState('');
 
   useEffect(() => {
     if (isAuthenticated()) {
       setIsAuth(true);
       loadData();
-    }
-    // Load GitHub token from localStorage
-    const savedToken = localStorage.getItem('github_token');
-    if (savedToken) {
-      setGithubToken(savedToken);
     }
   }, []);
 
@@ -120,58 +111,13 @@ const GuestBookAdmin = () => {
   const handleDelete = async (messageId, guestName) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar el mensaje de ${guestName}?`)) {
       await deleteMessage(messageId);
-      loadData();
+      // Wait a moment for Firebase to sync before reloading
+      await new Promise(resolve => setTimeout(resolve, 500));
+      await loadData();
     }
   };
 
-  const handleSaveToken = () => {
-    if (!githubToken.trim()) {
-      alert('Por favor ingresa un token válido');
-      return;
-    }
-    localStorage.setItem('github_token', githubToken);
-    setShowTokenModal(false);
-    alert('Token guardado exitosamente');
-  };
 
-  const handleSyncToGitHub = async () => {
-    if (!githubToken) {
-      setShowTokenModal(true);
-      return;
-    }
-
-    try {
-      // Use the new sync function that merges local and GitHub messages
-      const result = await syncWithGitHub(githubToken);
-      
-      if (result.success) {
-        alert(`✓ Sincronización exitosa!\n\nTotal: ${result.total} mensajes\nDesde GitHub: ${result.fromGitHub}\nSolo locales: ${result.localOnly}`);
-        loadData(); // Reload to show merged data
-      } else {
-        throw new Error(result.error);
-      }
-    } catch (error) {
-      console.error('Error syncing to GitHub:', error);
-      alert(`✗ Error al sincronizar con GitHub: ${error.message}`);
-    }
-  };
-
-  const handleLoadFromGitHub = async () => {
-    try {
-      const githubMessages = await loadMessagesFromGitHub();
-      
-      if (githubMessages.length > 0) {
-        alert(`✓ Cargados ${githubMessages.length} mensajes desde GitHub Issues`);
-        setMessages(githubMessages);
-        loadData();
-      } else {
-        alert('No se encontraron mensajes en GitHub Issues con la etiqueta "guest-book"');
-      }
-    } catch (error) {
-      console.error('Error loading from GitHub:', error);
-      alert(`✗ Error al cargar desde GitHub: ${error.message}`);
-    }
-  };
 
   const filteredMessages = messages.filter(msg =>
     searchTerm === '' ||
@@ -301,50 +247,12 @@ const GuestBookAdmin = () => {
                 Exportar CSV
               </button>
               <button
-                onClick={handleLoadFromGitHub}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
-              >
-                <Icon name="Download" className="w-4 h-4" />
-                Cargar desde GitHub
-              </button>
-              <button
-                onClick={handleSyncToGitHub}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-              >
-                <Icon name="RefreshCw" className="w-4 h-4" />
-                Sincronizar (Merge)
-              </button>
-              <button
-                onClick={() => setShowTokenModal(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-              >
-                <Icon name="Key" className="w-4 h-4" />
-                Configurar Token
-              </button>
-              <button
                 onClick={handleClearAll}
                 className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
               >
                 <Icon name="Trash2" className="w-4 h-4" />
                 Eliminar Todos
               </button>
-            </div>
-
-            {/* GitHub Info Banner */}
-            <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-6">
-              <div className="flex items-start gap-3">
-                <Icon name="Info" className="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5" />
-                <div className="flex-1">
-                  <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
-                    Sistema de Sincronización con GitHub
-                  </p>
-                  <p className="text-xs text-blue-800 dark:text-blue-200">
-                    Los mensajes se guardan localmente y se pueden sincronizar con GitHub Issues. 
-                    Cada mensaje se crea como un Issue con la etiqueta "guest-book". 
-                    Los invitados verán mensajes de otros invitados en tiempo real si tienen el mismo navegador.
-                  </p>
-                </div>
-              </div>
             </div>
 
             {/* Messages List */}
@@ -397,71 +305,6 @@ const GuestBookAdmin = () => {
           </div>
         </div>
       </main>
-
-      {/* GitHub Token Configuration Modal */}
-      {showTokenModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-card rounded-2xl shadow-2xl max-w-md w-full p-6 border border-border">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-xl font-bold text-foreground">Configurar Token de GitHub</h3>
-              <button
-                onClick={() => setShowTokenModal(false)}
-                className="text-muted-foreground hover:text-foreground"
-              >
-                <Icon name="X" className="w-6 h-6" />
-              </button>
-            </div>
-
-            <div className="mb-4">
-              <p className="text-sm text-muted-foreground mb-4">
-                Para guardar mensajes en GitHub, necesitas un Personal Access Token con permisos de escritura.
-              </p>
-
-              <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 mb-4">
-                <p className="text-sm text-blue-900 dark:text-blue-100 mb-2 font-semibold">
-                  Cómo obtener tu token:
-                </p>
-                <ol className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
-                  <li>Ve a GitHub → Settings → Developer settings</li>
-                  <li>Clic en "Personal access tokens" → "Tokens (classic)"</li>
-                  <li>Clic en "Generate new token (classic)"</li>
-                  <li>Selecciona el scope "repo" (acceso completo)</li>
-                  <li>Copia el token generado</li>
-                </ol>
-              </div>
-
-              <label className="block text-sm font-medium text-foreground mb-2">
-                GitHub Token
-              </label>
-              <input
-                type="password"
-                value={githubToken}
-                onChange={(e) => setGithubToken(e.target.value)}
-                placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
-                className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <p className="text-xs text-muted-foreground mt-2">
-                El token se guarda localmente en tu navegador y nunca se comparte.
-              </p>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={handleSaveToken}
-                className="flex-1 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors font-medium"
-              >
-                Guardar Token
-              </button>
-              <button
-                onClick={() => setShowTokenModal(false)}
-                className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
