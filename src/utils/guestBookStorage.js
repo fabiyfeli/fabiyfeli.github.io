@@ -222,7 +222,8 @@ export const addMessage = async (newMessage) => {
     ...newMessage,
     id: Date.now(), // Use timestamp as unique ID
     date: new Date(),
-    likes: 0
+    likes: 0,
+    firebaseId: null // Will be populated after Firebase sync
   };
   const updatedMessages = [messageWithId, ...messages];
   saveMessages(updatedMessages);
@@ -244,6 +245,18 @@ export const addMessage = async (newMessage) => {
           language: messageWithId.language || 'es'
         });
         console.log('✓ Message synced to Firebase with ID:', docRef.id);
+        
+        // Update localStorage with the Firebase ID for future reference
+        const updatedMessageWithFirebaseId = {
+          ...messageWithId,
+          firebaseId: docRef.id
+        };
+        const messagesWithUpdated = updatedMessages.map(msg => 
+          msg.id === messageWithId.id ? updatedMessageWithFirebaseId : msg
+        );
+        saveMessages(messagesWithUpdated);
+        console.log('✓ Updated localStorage with firebaseId:', docRef.id);
+        return updatedMessageWithFirebaseId;
       } else {
         console.warn('⚠️ Could not generate email key for guest');
       }
@@ -328,29 +341,61 @@ export const deleteMessage = async (messageId) => {
   const messages = loadMessagesFromLocalStorage();
   const messageToDelete = messages.find(m => m.id === messageId);
   
+  if (!messageToDelete) {
+    console.warn('⚠️ Message not found for deletion:', messageId);
+    return false;
+  }
+  
+  // Always delete from localStorage first
   const updatedMessages = messages.filter(msg => msg.id !== messageId);
   saveMessages(updatedMessages);
+  console.log('✓ Message deleted from localStorage:', messageId);
   
   // Try to delete from Firebase
-  if (messageToDelete && isFirebaseConfigured()) {
+  if (isFirebaseConfigured()) {
     try {
-      const emailKey = getGuestEmailKey(messageToDelete);
-      if (emailKey) {
+      console.log('🗑️ Attempting to delete message from Firebase...');
+      console.log('Message to delete:', {
+        id: messageToDelete.id,
+        firebaseId: messageToDelete.firebaseId,
+        email: messageToDelete.email,
+        name: messageToDelete.name
+      });
+      
+      // Try using firebaseId first if available
+      if (messageToDelete.firebaseId) {
+        const docRef = doc(db, FIREBASE_COLLECTION, messageToDelete.firebaseId);
+        await deleteDoc(docRef);
+        console.log('✓ Message deleted from Firebase via firebaseId:', messageToDelete.firebaseId);
+      } else {
+        // Fallback to email search
+        const emailKey = getGuestEmailKey(messageToDelete);
+        if (!emailKey) {
+          console.warn('⚠️ Cannot delete from Firebase: invalid email key');
+          return true; // Local delete succeeded
+        }
+        
+        console.log('🔍 Searching Firebase by email:', emailKey);
         const q = query(collection(db, FIREBASE_COLLECTION), where('email', '==', emailKey));
         const querySnapshot = await getDocs(q);
         
         if (!querySnapshot.empty) {
-          const docRef = querySnapshot.docs[0].ref;
-          await deleteDoc(docRef);
-          console.log('✓ Message deleted from Firebase');
+          for (const firebaseDoc of querySnapshot.docs) {
+            await deleteDoc(firebaseDoc.ref);
+            console.log('✓ Message deleted from Firebase via email:', emailKey, 'Document ID:', firebaseDoc.id);
+          }
         } else {
           console.warn('⚠️ Message not found in Firebase for deletion:', emailKey);
         }
       }
     } catch (error) {
       console.error('❌ Failed to delete from Firebase:', error);
-      throw error; // Re-throw so caller knows about sync failures
+      console.error('Error code:', error.code, 'Message:', error.message);
+      console.error('Full error:', error);
+      // Continue anyway - local delete already succeeded
     }
+  } else {
+    console.log('⚠️ Firebase not configured, delete only from localStorage');
   }
   
   return true;
@@ -375,6 +420,156 @@ export const clearAllMessages = () => {
   } catch (error) {
     console.error('Error clearing messages:', error);
     return false;
+  }
+};
+
+// Diagnose duplicate messages and missing data
+export const diagnoseDuplicateMessages = async () => {
+  console.log('🔍 Starting duplicate messages diagnosis...');
+  
+  // Load from Firebase to get the true count
+  if (!isFirebaseConfigured()) {
+    console.warn('Firebase not configured');
+    return { error: 'Firebase not configured' };
+  }
+  
+  try {
+    const q = query(collection(db, FIREBASE_COLLECTION), orderBy('date', 'desc'));
+    const querySnapshot = await getDocs(q);
+    const firebaseMessages = [];
+    const emailCounts = new Map();
+    const duplicates = [];
+    
+    querySnapshot.forEach((doc) => {
+      const data = doc.data();
+      const email = data.email ? data.email.toLowerCase() : 'NO_EMAIL';
+      
+      firebaseMessages.push({
+        ...data,
+        firebaseDocId: doc.id,
+        date: data.date?.toDate() || new Date()
+      });
+      
+      // Track email occurrences
+      if (!emailCounts.has(email)) {
+        emailCounts.set(email, []);
+      }
+      emailCounts.get(email).push({
+        id: data.id,
+        firebaseDocId: doc.id,
+        name: data.name,
+        email: data.email,
+        date: data.date?.toDate()
+      });
+    });
+    
+    // Find duplicates
+    for (const [email, records] of emailCounts) {
+      if (records.length > 1) {
+        duplicates.push({
+          email,
+          count: records.length,
+          records: records.sort((a, b) => new Date(b.date) - new Date(a.date))
+        });
+      }
+    }
+    
+    // Get localStorage data
+    const localMessages = loadMessagesFromLocalStorage();
+    
+    const diagnosis = {
+      firebaseTotal: firebaseMessages.length,
+      localTotal: localMessages.length,
+      uniqueEmails: emailCounts.size,
+      duplicateCount: duplicates.length,
+      totalDuplicateRecords: firebaseMessages.length - emailCounts.size,
+      duplicates: duplicates
+    };
+    
+    console.log('📊 Diagnosis Results:');
+    console.log(`  Firebase total: ${diagnosis.firebaseTotal}`);
+    console.log(`  Unique emails: ${diagnosis.uniqueEmails}`);
+    console.log(`  Duplicate groups: ${diagnosis.duplicateCount}`);
+    console.log(`  Total duplicate records: ${diagnosis.totalDuplicateRecords}`);
+    console.log(`  Missing from local: ${diagnosis.firebaseTotal - diagnosis.localTotal}`);
+    
+    if (duplicates.length > 0) {
+      console.log('\n📋 Duplicates found:');
+      duplicates.forEach((dup, idx) => {
+        console.log(`  ${idx + 1}. ${dup.email}: ${dup.count} records`);
+        dup.records.forEach((rec, recIdx) => {
+          console.log(`     ${recIdx + 1}. ${rec.name} (${rec.firebaseDocId}) - ${rec.date}`);
+        });
+      });
+    }
+    
+    return diagnosis;
+  } catch (error) {
+    console.error('❌ Error during diagnosis:', error);
+    return { error: error.message };
+  }
+};
+
+// Remove duplicate messages keeping the most recent one
+export const removeDuplicateMessages = async () => {
+  console.log('🗑️ Starting duplicate messages removal...');
+  
+  if (!isFirebaseConfigured()) {
+    console.warn('Firebase not configured');
+    return { error: 'Firebase not configured' };
+  }
+  
+  try {
+    // Get diagnosis first
+    const diagnosis = await diagnoseDuplicateMessages();
+    if (diagnosis.error) {
+      return diagnosis;
+    }
+    
+    if (diagnosis.totalDuplicateRecords === 0) {
+      console.log('✅ No duplicates found');
+      return { success: true, removed: 0, message: 'No duplicates found' };
+    }
+    
+    let removedCount = 0;
+    
+    // Process each duplicate group
+    for (const duplicate of diagnosis.duplicates) {
+      const records = duplicate.records;
+      
+      // Keep the first one (most recent), delete the rest
+      const toDelete = records.slice(1);
+      
+      console.log(`\n🗑️ Processing ${duplicate.email}:`);
+      console.log(`  Keeping: ${records[0].firebaseDocId} (${records[0].date})`);
+      
+      for (const record of toDelete) {
+        try {
+          const docRef = doc(db, FIREBASE_COLLECTION, record.firebaseDocId);
+          await deleteDoc(docRef);
+          console.log(`  ✓ Deleted: ${record.firebaseDocId} (${record.date})`);
+          removedCount++;
+        } catch (error) {
+          console.error(`  ❌ Error deleting ${record.firebaseDocId}:`, error);
+        }
+      }
+    }
+    
+    console.log(`\n✅ Duplicate removal complete. Removed: ${removedCount} records`);
+    
+    // Refresh the local cache
+    const firebaseMessages = await loadMessagesFromFirebase();
+    saveMessages(firebaseMessages);
+    
+    return {
+      success: true,
+      removed: removedCount,
+      newTotal: firebaseMessages.length,
+      message: `Removed ${removedCount} duplicate records`
+    };
+  } catch (error) {
+    console.error('❌ Error during duplicate removal:', error);
+    return { error: error.message };
   }
 };
 

@@ -8,9 +8,11 @@ import {
   exportMessagesToCSV,
   importMessagesFromCSV,
   clearAllMessages,
-  getGuestBookStats
+  getGuestBookStats,
+  diagnoseDuplicateMessages,
+  removeDuplicateMessages
 } from '../../utils/guestBookStorage';
-import { checkAuth, setAuthSession, isAuthenticated } from '../../utils/rsvpStorage';
+import { checkAuth, setAuthSession, isAuthenticated, logout } from '../../utils/rsvpStorage';
 
 const GuestBookAdmin = () => {
   const fileInputRef = useRef(null);
@@ -19,6 +21,7 @@ const GuestBookAdmin = () => {
   const [messages, setMessages] = useState([]);
   const [stats, setStats] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -45,12 +48,21 @@ const GuestBookAdmin = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     if (checkAuth(password)) {
-      setAuthSession();
+      setAuthSession(true);
       setIsAuth(true);
       loadData();
       setPassword('');
     } else {
       alert('Contraseña incorrecta');
+    }
+  };
+
+  const handleLogout = () => {
+    if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+      logout();
+      setIsAuth(false);
+      setMessages([]);
+      setStats(null);
     }
   };
 
@@ -117,7 +129,72 @@ const GuestBookAdmin = () => {
     }
   };
 
+  const handleDiagnoseDuplicates = async () => {
+    console.log('🔍 Opening browser console to see diagnosis results...');
+    alert('Abriendo consola del navegador...\n\nPresiona F12 para ver los resultados detallados del diagnóstico.');
+    
+    const diagnosis = await diagnoseDuplicateMessages();
+    
+    if (diagnosis.error) {
+      alert(`❌ Error: ${diagnosis.error}`);
+      return;
+    }
+    
+    let message = `📊 Diagnóstico de duplicados:\n\n`;
+    message += `Total en Firebase: ${diagnosis.firebaseTotal}\n`;
+    message += `Total en local: ${diagnosis.localTotal}\n`;
+    message += `Emails únicos: ${diagnosis.uniqueEmails}\n`;
+    message += `Registros duplicados: ${diagnosis.totalDuplicateRecords}\n`;
+    message += `Grupos de duplicados: ${diagnosis.duplicateCount}\n`;
+    message += `\nFaltantes en local: ${diagnosis.firebaseTotal - diagnosis.localTotal}`;
+    
+    if (diagnosis.duplicateCount > 0) {
+      message += `\n\n⚠️ Se encontraron ${diagnosis.duplicateCount} grupos de duplicados.`;
+      message += `\nVer consola del navegador (F12) para detalles completos.`;
+    }
+    
+    alert(message);
+  };
 
+  const handleRemoveDuplicates = async () => {
+    const diagnosis = await diagnoseDuplicateMessages();
+    
+    if (diagnosis.error) {
+      alert(`❌ Error: ${diagnosis.error}`);
+      return;
+    }
+    
+    if (diagnosis.totalDuplicateRecords === 0) {
+      alert('✅ No se encontraron duplicados');
+      return;
+    }
+    
+    const confirmMessage = `⚠️ Se encontraron ${diagnosis.totalDuplicateRecords} registros duplicados en ${diagnosis.duplicateCount} grupos.\n\n` +
+      `Se eliminarán los duplicados, manteniendo el registro más reciente de cada grupo.\n\n` +
+      `¿Continuar?`;
+    
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+    
+    setIsProcessing(true);
+    try {
+      const result = await removeDuplicateMessages();
+      
+      if (result.error) {
+        alert(`❌ Error: ${result.error}`);
+      } else {
+        alert(`✅ ${result.message}\n\nEliminados: ${result.removed}\nNuevo total: ${result.newTotal}`);
+        // Reload data
+        await loadData();
+      }
+    } catch (error) {
+      console.error('Error removing duplicates:', error);
+      alert(`❌ Error: ${error.message}`);
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const filteredMessages = messages.filter(msg =>
     searchTerm === '' ||
@@ -174,13 +251,23 @@ const GuestBookAdmin = () => {
         <div className="py-12 px-4">
           <div className="max-w-7xl mx-auto">
             {/* Header */}
-            <div className="mb-8">
-              <h1 className="text-3xl sm:text-4xl font-display mb-2">
-                Libro de Visitas
-              </h1>
-              <p className="text-muted-foreground">
-                Gestiona los mensajes de los invitados
-              </p>
+            <div className="mb-8 flex items-center justify-between gap-4">
+              <div>
+                <h1 className="text-3xl sm:text-4xl font-display mb-2">
+                  Libro de Visitas
+                </h1>
+                <p className="text-muted-foreground">
+                  Gestiona los mensajes de los invitados
+                </p>
+              </div>
+              {/* Logout Button */}
+              <button
+                onClick={handleLogout}
+                className="px-4 py-2 bg-red-100 text-red-700 border border-red-300 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex items-center gap-2"
+              >
+                <Icon name="LogOut" className="w-4 h-4" />
+                Cerrar sesión
+              </button>
             </div>
 
             {/* Stats Cards */}
@@ -245,6 +332,24 @@ const GuestBookAdmin = () => {
               >
                 <Icon name="Download" className="w-4 h-4" />
                 Exportar CSV
+              </button>
+              <button
+                onClick={handleDiagnoseDuplicates}
+                disabled={isProcessing}
+                className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Diagnosticar registros duplicados"
+              >
+                <Icon name="AlertCircle" className="w-4 h-4" />
+                Diagnosticar Duplicados
+              </button>
+              <button
+                onClick={handleRemoveDuplicates}
+                disabled={isProcessing}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                title="Eliminar registros duplicados, manteniendo el más reciente"
+              >
+                <Icon name={isProcessing ? "Loader2" : "Trash"} className={`w-4 h-4 ${isProcessing ? 'animate-spin' : ''}`} />
+                {isProcessing ? 'Procesando...' : 'Eliminar Duplicados'}
               </button>
               <button
                 onClick={handleClearAll}

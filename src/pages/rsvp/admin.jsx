@@ -3,25 +3,19 @@ import { useNavigate } from 'react-router-dom';
 import Header from '../../components/Header';
 import Icon from '../../components/AppIcon';
 import { 
-  loadRSVPs,
-  loadRSVPsWithSync,
-  getRSVPStats, 
+  loadAllRSVPsFromFirebase,
+  updateRSVPInFirebase,
+  deleteRSVPFromFirebase,
   checkAuth, 
   setAuthSession, 
   isAuthenticated,
+  logout,
   exportRSVPs,
-  clearAllRSVPs,
-  toggleRSVPApproval,
-  updateRSVP,
-  deleteRSVP,
-  importRSVPsFromCSV,
-  importRSVPsFromCSVWithFirebase,
-  migrateLocalStorageToFirebase
+  clearAllRSVPs
 } from '../../utils/rsvpStorage';
 
 const RSVPAdmin = () => {
   const navigate = useNavigate();
-  const fileInputRef = useRef(null);
   const [isAuth, setIsAuth] = useState(false);
   const [password, setPassword] = useState('');
   const [rsvps, setRsvps] = useState([]);
@@ -31,8 +25,6 @@ const RSVPAdmin = () => {
   const [editingField, setEditingField] = useState(null); // { rsvpId, field }
   const [editValue, setEditValue] = useState('');
   const [isLoadingFirebase, setIsLoadingFirebase] = useState(false);
-  const [dataSource, setDataSource] = useState(''); // 'firebase', 'localStorage', 'error'
-  const [isMigrating, setIsMigrating] = useState(false);
 
   useEffect(() => {
     if (isAuthenticated()) {
@@ -43,65 +35,30 @@ const RSVPAdmin = () => {
 
   const loadData = async () => {
     setIsLoadingFirebase(true);
-    setDataSource('');
-    
-    console.log('🚀 Admin Panel: Starting data load...');
-    console.log('📅 Current date:', new Date().toLocaleString());
-    
     try {
-      const loadedRSVPs = await loadRSVPsWithSync();
+      const loadedRSVPs = await loadAllRSVPsFromFirebase();
       setRsvps(loadedRSVPs);
-      setStats(getRSVPStats());
       
-      // Determine data source from console logs
-      if (loadedRSVPs.length > 0 && loadedRSVPs[0].firebaseId) {
-        setDataSource('firebase');
-        console.log('✅ Data source: Firebase');
-      } else if (loadedRSVPs.length > 0) {
-        setDataSource('localStorage');
-        console.log('⚠️ Data source: localStorage only');
-      }
-      
-      console.log('✓ Loaded', loadedRSVPs.length, 'RSVPs');
-      console.log('📝 First RSVP date:', loadedRSVPs[0]?.submittedAt);
+      // Calculate stats
+      const stats = {
+        totalResponses: loadedRSVPs.length,
+        attending: loadedRSVPs.filter(r => r.attendance === 'yes').length,
+        notAttendingApproved: loadedRSVPs.filter(r => r.attendance === 'no' && r.approved === true).length,
+        notAttendingPending: loadedRSVPs.filter(r => r.attendance === 'no' && r.approved !== true).length,
+        notAttendingTotal: loadedRSVPs.filter(r => r.attendance === 'no').length,
+        pending: loadedRSVPs.filter(r => r.attendance !== 'yes' && r.attendance !== 'no').length,
+        approvedToAttend: loadedRSVPs.filter(r => r.attendance === 'yes' && r.approved === true).length,
+        unapprovedToAttend: loadedRSVPs.filter(r => r.attendance === 'yes' && r.approved !== true).length,
+        approved: loadedRSVPs.filter(r => r.approved === true).length,
+        totalGuests: loadedRSVPs.filter(r => r.attendance === 'yes' && r.approved === true).length + 
+                     loadedRSVPs.filter(r => r.attendance === 'yes' && r.approved === true).reduce((sum, r) => sum + (r.hasPlusOne ? 1 : 0), 0)
+      };
+      setStats(stats);
+      console.log('✅ Loaded', loadedRSVPs.length, 'RSVPs from Firebase');
+      console.log('Stats:', stats);
     } catch (error) {
       console.error('❌ Error loading RSVPs:', error);
-      setDataSource('error');
-      // Fallback to local data
-      const localRSVPs = loadRSVPs();
-      setRsvps(localRSVPs);
-      setStats(getRSVPStats());
-    } finally {
-      setIsLoadingFirebase(false);
-    }
-  };
-
-  const handleRefreshFromFirebase = async () => {
-    setIsLoadingFirebase(true);
-    setDataSource('');
-    
-    console.log('🔄 Manual refresh requested...');
-    
-    // Clear localStorage to force Firebase reload
-    localStorage.removeItem('wedding_rsvps');
-    console.log('🗑️ Cleared localStorage cache');
-    
-    try {
-      const loadedRSVPs = await loadRSVPsWithSync();
-      setRsvps(loadedRSVPs);
-      setStats(getRSVPStats());
-      
-      if (loadedRSVPs.length > 0 && loadedRSVPs[0].firebaseId) {
-        setDataSource('firebase');
-        alert(`✓ Recargados ${loadedRSVPs.length} RSVPs desde Firebase\n\nÚltima actualización: ${loadedRSVPs[0]?.submittedAt?.toLocaleString()}`);
-      } else {
-        setDataSource('localStorage');
-        alert(`⚠️ No se pudieron cargar datos de Firebase.\nUsando ${loadedRSVPs.length} RSVPs de localStorage.`);
-      }
-    } catch (error) {
-      console.error('❌ Error refreshing from Firebase:', error);
-      setDataSource('error');
-      alert('Error al cargar desde Firebase. Ver consola para detalles.');
+      alert('Error loading RSVPs: ' + error.message);
     } finally {
       setIsLoadingFirebase(false);
     }
@@ -110,7 +67,7 @@ const RSVPAdmin = () => {
   const handleLogin = (e) => {
     e.preventDefault();
     if (checkAuth(password)) {
-      setAuthSession();
+      setAuthSession(true);
       setIsAuth(true);
       loadData();
       setPassword('');
@@ -119,99 +76,71 @@ const RSVPAdmin = () => {
     }
   };
 
+  const handleLogout = () => {
+    if (window.confirm('¿Estás seguro de que quieres cerrar sesión?')) {
+      logout();
+      setIsAuth(false);
+      setRsvps([]);
+      setStats(null);
+    }
+  };
+
   const handleExport = () => {
     exportRSVPs();
   };
 
-  const handleImport = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handleFileChange = (event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    if (!file.name.endsWith('.csv')) {
-      alert('Por favor selecciona un archivo CSV válido');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
+  const handleClearAll = async () => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar TODAS las confirmaciones de Firebase? Esta acción no se puede deshacer.')) {
+      setIsLoadingFirebase(true);
       try {
-        const csvContent = e.target?.result;
-        console.log('CSV Content loaded, length:', csvContent?.length);
-        console.log('First 200 chars:', csvContent?.substring(0, 200));
-        
-        console.log('⏳ Importando y sincronizando con Firebase...');
-        
-        const result = await importRSVPsFromCSVWithFirebase(csvContent);
-        console.log('Import result:', result);
-        
-        if (result.success) {
-          const messages = [];
-          if (result.updated > 0) messages.push(`${result.updated} actualizados`);
-          if (result.added > 0) messages.push(`${result.added} nuevos`);
-          
-          let message = `✓ Importación exitosa: ${messages.join(', ')}`;
-          
-          if (result.firebaseSynced !== undefined) {
-            message += `\n\n☁️ Firebase: ${result.firebaseSynced} sincronizados`;
-            if (result.firebaseErrors > 0) {
-              message += `, ${result.firebaseErrors} errores`;
-            }
-          }
-          
-          alert(message);
-          
-          // Clear cache and reload from Firebase
-          localStorage.removeItem('wedding_rsvp_responses');
-          await loadData();
-        } else {
-          alert(`✗ Error al importar: ${result.error}`);
-        }
+        const result = await clearAllRSVPs();
+        alert(`✅ Eliminadas ${result.deletedCount} confirmaciones${result.errorCount > 0 ? ` (${result.errorCount} errores)` : ''}`);
+        await loadData();
       } catch (error) {
-        console.error('Error in handleFileChange:', error);
-        alert(`✗ Error al procesar el archivo: ${error.message}`);
+        alert('Error: ' + error.message);
+      } finally {
+        setIsLoadingFirebase(false);
       }
-      
-      // Reset file input
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    };
-    
-    reader.onerror = (error) => {
-      console.error('FileReader error:', error);
-      alert('Error al leer el archivo');
-    };
-    
-    // Try reading with UTF-8 encoding first
-    reader.readAsText(file, 'UTF-8');
-  };
-
-  const handleClearAll = () => {
-    if (window.confirm('¿Estás seguro de que quieres eliminar todas las confirmaciones? Esta acción no se puede deshacer.')) {
-      clearAllRSVPs();
-      loadData();
     }
   };
 
   const handleToggleApproval = async (rsvpId) => {
-    await toggleRSVPApproval(rsvpId);
-    // Wait a moment for Firebase to sync before reloading
-    await new Promise(resolve => setTimeout(resolve, 500));
-    await loadData();
+    const rsvp = rsvps.find(r => r.id === rsvpId);
+    if (rsvp) {
+      try {
+        const newApproved = !rsvp.approved;
+        console.log(`Toggling approval for ${rsvpId}: ${rsvp.approved} -> ${newApproved}`);
+        const result = await updateRSVPInFirebase(rsvpId, { approved: newApproved });
+        if (result.error) {
+          alert('Error: ' + result.error);
+          console.error('Error updating approval:', result.error);
+        } else {
+          await loadData();
+        }
+      } catch (error) {
+        console.error('Error in handleToggleApproval:', error);
+        alert('Error: ' + error.message);
+      }
+    }
   };
 
   const handleToggleAttendance = async (rsvpId) => {
     const rsvp = rsvps.find(r => r.id === rsvpId);
     if (rsvp) {
-      const newAttendance = rsvp.attendance === 'yes' ? 'no' : 'yes';
-      await updateRSVP(rsvpId, { attendance: newAttendance });
-      // Wait a moment for Firebase to sync before reloading
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await loadData();
+      try {
+        const newAttendance = rsvp.attendance === 'yes' ? 'no' : 'yes';
+        console.log(`Toggling attendance for ${rsvpId}: ${rsvp.attendance} -> ${newAttendance}`);
+        const result = await updateRSVPInFirebase(rsvpId, { attendance: newAttendance });
+        if (result.error) {
+          alert('Error: ' + result.error);
+          console.error('Error updating attendance:', result.error);
+        } else {
+          await loadData();
+        }
+      } catch (error) {
+        console.error('Error in handleToggleAttendance:', error);
+        alert('Error: ' + error.message);
+      }
     }
   };
 
@@ -227,76 +156,27 @@ const RSVPAdmin = () => {
 
   const saveEdit = async () => {
     if (editingField) {
-      await updateRSVP(editingField.rsvpId, { [editingField.field]: editValue });
-      setEditingField(null);
-      setEditValue('');
-      // Wait a moment for Firebase to sync before reloading
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await loadData();
+      const result = await updateRSVPInFirebase(editingField.rsvpId, { [editingField.field]: editValue });
+      if (result.error) {
+        alert('Error: ' + result.error);
+      } else {
+        setEditingField(null);
+        setEditValue('');
+        await loadData();
+      }
     }
   };
 
   const handleDelete = async (rsvpId, guestName) => {
     if (window.confirm(`¿Estás seguro de que quieres eliminar la confirmación de ${guestName}?`)) {
-      await deleteRSVP(rsvpId);
-      // Wait a moment for Firebase to sync before reloading
-      await new Promise(resolve => setTimeout(resolve, 500));
-      await loadData();
-    }
-  };
-
-  const handleMigrateToFirebase = async () => {
-    const localRSVPs = loadRSVPs();
-    
-    if (localRSVPs.length === 0) {
-      alert('No hay RSVPs en localStorage para migrar');
-      return;
-    }
-
-    // Ask user if they want to overwrite existing data
-    const message = `¿Migrar ${localRSVPs.length} RSVPs de localStorage a Firebase?\n\n` +
-      `Si hay RSVPs duplicados (mismo email):\n` +
-      `• OK = Solo crear nuevos (no sobrescribe)\n` +
-      `• Cancelar = Abortar migración\n\n` +
-      `Para SOBRESCRIBIR duplicados, mantén presionado SHIFT y haz click en OK.`;
-    
-    if (!window.confirm(message)) {
-      return;
-    }
-
-    // Check if SHIFT key is pressed for force overwrite
-    const forceOverwrite = window.event && window.event.shiftKey;
-    
-    if (forceOverwrite) {
-      if (!window.confirm(`⚠️ MODO SOBRESCRITURA ACTIVADO\n\nEsto actualizará TODOS los RSVPs existentes en Firebase con los datos de localStorage.\n\n¿Continuar?`)) {
-        return;
+      const result = await deleteRSVPFromFirebase(rsvpId);
+      if (result.error) {
+        alert('Error: ' + result.error);
+      } else {
+        await loadData();
       }
     }
-
-    setIsMigrating(true);
-    try {
-      const result = await migrateLocalStorageToFirebase(forceOverwrite);
-      
-      let message = `✅ Migración completada!\n\n`;
-      if (result.successCount > 0) message += `${result.successCount} creados\n`;
-      if (result.updatedCount > 0) message += `${result.updatedCount} actualizados\n`;
-      if (result.skippedCount > 0) message += `${result.skippedCount} omitidos (ya existían)\n`;
-      if (result.errorCount > 0) message += `\n⚠️ ${result.errorCount} errores (ver consola)`;
-      
-      alert(message);
-      
-      // Clear localStorage cache and reload from Firebase
-      localStorage.removeItem('wedding_rsvp_responses');
-      await loadData();
-    } catch (error) {
-      console.error('Migration error:', error);
-      alert(`❌ Error durante la migración: ${error.message}`);
-    } finally {
-      setIsMigrating(false);
-    }
   };
-
-
 
   const filteredRSVPs = rsvps
     .filter(rsvp => {
@@ -310,9 +190,9 @@ const RSVPAdmin = () => {
       } else if (filter === 'notAttendingApproved') {
         matchesFilter = rsvp.attendance === 'no' && rsvp.approved === true;
       } else if (filter === 'notAttendingPending') {
-        matchesFilter = rsvp.attendance === 'no' && rsvp.approved === false;
+        matchesFilter = rsvp.attendance === 'no' && rsvp.approved !== true;
       } else if (filter === 'pending') {
-        matchesFilter = rsvp.approved === false && rsvp.attendance !== 'no';
+        matchesFilter = rsvp.approved !== true;
       } else if (filter === 'approved') {
         matchesFilter = rsvp.approved === true;
       }
@@ -327,8 +207,8 @@ const RSVPAdmin = () => {
     })
     .sort((a, b) => {
       // Sort by submission date (newest first)
-      const dateA = new Date(a.submittedAt || 0);
-      const dateB = new Date(b.submittedAt || 0);
+      const dateA = a.submittedAt || new Date(0);
+      const dateB = b.submittedAt || new Date(0);
       return dateB - dateA;
     });
 
@@ -381,7 +261,7 @@ const RSVPAdmin = () => {
           <div className="max-w-7xl mx-auto">
             {/* Header */}
             <div className="mb-8">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between gap-4">
                 <div>
                   <h1 className="text-3xl sm:text-4xl font-display mb-2">
                     Confirmaciones RSVP
@@ -390,25 +270,16 @@ const RSVPAdmin = () => {
                     Gestiona las confirmaciones de asistencia
                   </p>
                 </div>
-                {/* Data Source Indicator */}
-                {dataSource && (
-                  <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                    dataSource === 'firebase' ? 'bg-green-100 text-green-700 border border-green-300' :
-                    dataSource === 'localStorage' ? 'bg-yellow-100 text-yellow-700 border border-yellow-300' :
-                    'bg-red-100 text-red-700 border border-red-300'
-                  }`}>
-                    <Icon name={
-                      dataSource === 'firebase' ? 'Cloud' :
-                      dataSource === 'localStorage' ? 'HardDrive' :
-                      'AlertCircle'
-                    } className="w-4 h-4" />
-                    <span className="text-sm font-medium">
-                      {dataSource === 'firebase' ? '☁️ Firebase' :
-                       dataSource === 'localStorage' ? '💾 Local' :
-                       '❌ Error'}
-                    </span>
-                  </div>
-                )}
+                <div className="flex items-center gap-2 flex-col sm:flex-row">
+                  {/* Logout Button */}
+                  <button
+                    onClick={handleLogout}
+                    className="px-4 py-2 bg-red-100 text-red-700 border border-red-300 rounded-lg hover:bg-red-200 transition-colors text-sm font-medium flex items-center gap-2"
+                  >
+                    <Icon name="LogOut" className="w-4 h-4" />
+                    Cerrar sesión
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -544,19 +415,13 @@ const RSVPAdmin = () => {
 
             {/* Action Buttons */}
             <div className="flex gap-4 mb-6 flex-wrap">
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept=".csv"
-                onChange={handleFileChange}
-                className="hidden"
-              />
               <button
-                onClick={handleImport}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                onClick={loadData}
+                disabled={isLoadingFirebase}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Icon name="Upload" className="w-4 h-4" />
-                Importar CSV
+                <Icon name={isLoadingFirebase ? "Loader2" : "RefreshCw"} className={`w-4 h-4 ${isLoadingFirebase ? 'animate-spin' : ''}`} />
+                {isLoadingFirebase ? 'Cargando...' : 'Recargar'}
               </button>
               <button
                 onClick={handleExport}
@@ -566,28 +431,12 @@ const RSVPAdmin = () => {
                 Exportar CSV
               </button>
               <button
-                onClick={handleRefreshFromFirebase}
-                disabled={isLoadingFirebase}
-                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <Icon name={isLoadingFirebase ? "Loader2" : "RefreshCw"} className={`w-4 h-4 ${isLoadingFirebase ? 'animate-spin' : ''}`} />
-                {isLoadingFirebase ? 'Cargando...' : 'Recargar Firebase'}
-              </button>
-              <button
-                onClick={handleMigrateToFirebase}
-                disabled={isMigrating}
-                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Migrar/Sincronizar datos locales a Firebase (SHIFT+Click para sobrescribir duplicados)"
-              >
-                <Icon name={isMigrating ? "Loader2" : "Upload"} className={`w-4 h-4 ${isMigrating ? 'animate-spin' : ''}`} />
-                {isMigrating ? 'Migrando...' : 'Migrar a Firebase'}
-              </button>
-              <button
                 onClick={handleClearAll}
-                className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors"
+                disabled={isLoadingFirebase}
+                className="flex items-center gap-2 px-4 py-2 bg-destructive text-destructive-foreground rounded-lg hover:bg-destructive/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Icon name="Trash2" className="w-4 h-4" />
-                Eliminar Todas
+                <Icon name={isLoadingFirebase ? "Loader2" : "Trash2"} className={`w-4 h-4 ${isLoadingFirebase ? 'animate-spin' : ''}`} />
+                {isLoadingFirebase ? 'Eliminando...' : 'Eliminar Todas'}
               </button>
             </div>
 
@@ -790,13 +639,13 @@ const RSVPAdmin = () => {
                             </div>
                             <div className="text-xs text-muted-foreground mt-2 space-y-1">
                               <p>
-                                Enviado: {new Date(rsvp.submittedAt).toLocaleDateString('es-CL', {
+                                Enviado: {rsvp.submittedAt ? new Date(rsvp.submittedAt).toLocaleDateString('es-CL', {
                                   year: 'numeric',
                                   month: 'long',
                                   day: 'numeric',
                                   hour: '2-digit',
                                   minute: '2-digit'
-                                })}
+                                }) : 'N/A'}
                               </p>
                               {rsvp.updatedAt && (
                                 <p className="text-blue-600 dark:text-blue-400 font-medium">
